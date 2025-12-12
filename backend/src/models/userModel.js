@@ -6,13 +6,20 @@ const { query } = require('../config/database');
 const createUser = async (userData) => {
   const { first_name, last_name, email, password_hash, risk_appetite } = userData;
   
-  const result = await query(
+  await query(
     `INSERT INTO users (first_name, last_name, email, password_hash, risk_appetite) 
      VALUES (?, ?, ?, ?, ?)`,
     [first_name, last_name || null, email, password_hash, risk_appetite || 'moderate']
   );
   
-  return result.insertId;
+  // Get the newly created user by email
+  const users = await query('SELECT id FROM users WHERE email = ?', [email]);
+  
+  if (!users || users.length === 0) {
+    throw new Error('Failed to create user');
+  }
+  
+  return users[0].id;
 };
 
 /**
@@ -36,7 +43,11 @@ const findUserById = async (userId) => {
     [userId]
   );
   
-  return users.length > 0 ? users[0] : null;
+  if (!users || users.length === 0) {
+    return null;
+  }
+  
+  return users[0];
 };
 
 /**

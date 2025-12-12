@@ -115,6 +115,8 @@ describe('Product Endpoints', () => {
     });
   });
 
+  
+
   describe('GET /api/products/recommended/me', () => {
     it('should get recommended products for logged-in user', async () => {
       const res = await request(app)

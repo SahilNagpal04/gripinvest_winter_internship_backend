@@ -76,7 +76,7 @@ VALUES (
     'Admin',
     'User',
     'admin@gripinvest.in',
-    '$2a$10$xQHk6P5Z9vN5rX7kF2Y0ZOxGq8jXvZ5gF3mF6pZ9N5rX7kF2Y0ZOx',
+    '$2b$10$5sk6ErRXs.o4V4rS.QNYwu2zoc3Uw5SXji/xKXpPSAn4nPiaIwjO2',
     TRUE,
     1000000.00
 ) ON DUPLICATE KEY UPDATE email=email;

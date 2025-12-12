@@ -117,8 +117,7 @@ const getRecommendedProducts = async (riskAppetite) => {
  */
 const getTopProducts = async (limit = 5) => {
   return await query(
-    'SELECT * FROM investment_products WHERE is_active = TRUE ORDER BY annual_yield DESC LIMIT ?',
-    [limit]
+    `SELECT * FROM investment_products WHERE is_active = TRUE ORDER BY annual_yield DESC LIMIT ${limit}`
   );
 };
 

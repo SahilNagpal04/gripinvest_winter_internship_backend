@@ -57,7 +57,11 @@ const getInvestmentById = async (investmentId) => {
     [investmentId]
   );
 
-  return investments.length > 0 ? investments[0] : null;
+  if (!investments || investments.length === 0) {
+    return null;
+  }
+
+  return investments[0];
 };
 
 /**

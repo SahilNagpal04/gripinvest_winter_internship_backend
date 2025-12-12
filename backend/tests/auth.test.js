@@ -9,21 +9,21 @@ describe('Auth Endpoints', () => {
 
   describe('POST /api/auth/signup', () => {
     it('should create a new user successfully', async () => {
-      const res = await request(app)
-        .post('/api/auth/signup')
-        .send({
-          first_name: 'Test',
-          last_name: 'User',
-          email: 'test@example.com',
-          password: 'Password@123',
-          risk_appetite: 'moderate'
-        });
-
-      expect(res.statusCode).toBe(201);
-      expect(res.body.status).toBe('success');
-      expect(res.body.data).toHaveProperty('token');
-      expect(res.body.data.user.email).toBe('test@example.com');
+  const res = await request(app)
+    .post('/api/auth/signup')
+    .send({
+      first_name: 'Test',
+      last_name: 'User',
+      email: 'testnew@example.com',
+      password: 'Password@123',
+      risk_appetite: 'moderate'
     });
+
+  expect(res.statusCode).toBe(201);
+  expect(res.body.status).toBe('success');
+  expect(res.body.data).toHaveProperty('token');
+  expect(res.body.data.user.email).toBe('testnew@example.com');
+});
 
     it('should fail with weak password', async () => {
       const res = await request(app)

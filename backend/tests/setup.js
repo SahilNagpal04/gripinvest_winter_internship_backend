@@ -13,10 +13,12 @@ afterAll(async () => {
 
 // Helper function to clear database
 const clearDatabase = async () => {
+  await pool.query('SET FOREIGN_KEY_CHECKS = 0');
   await pool.query('DELETE FROM transaction_logs');
   await pool.query('DELETE FROM investments');
   await pool.query('DELETE FROM investment_products WHERE name LIKE "Test%"');
-  await pool.query('DELETE FROM users WHERE email LIKE "test%"');
+  await pool.query('DELETE FROM users WHERE email LIKE "test%" OR email = "testinvest@example.com"');
+  await pool.query('SET FOREIGN_KEY_CHECKS = 1');
 };
 
 module.exports = {
