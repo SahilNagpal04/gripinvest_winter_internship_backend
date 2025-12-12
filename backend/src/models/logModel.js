@@ -8,8 +8,8 @@ const getLogsByUserId = async (userId, limit = 100) => {
     `SELECT * FROM transaction_logs 
      WHERE user_id = ? 
      ORDER BY created_at DESC 
-     LIMIT ?`,
-    [userId, limit]
+     LIMIT ${parseInt(limit)}`,
+    [userId]
   );
 };
 
@@ -21,8 +21,8 @@ const getLogsByEmail = async (email, limit = 100) => {
     `SELECT * FROM transaction_logs 
      WHERE email = ? 
      ORDER BY created_at DESC 
-     LIMIT ?`,
-    [email, limit]
+     LIMIT ${parseInt(limit)}`,
+    [email]
   );
 };
 
@@ -33,8 +33,7 @@ const getAllLogs = async (limit = 100, offset = 0) => {
   return await query(
     `SELECT * FROM transaction_logs 
      ORDER BY created_at DESC 
-     LIMIT ? OFFSET ?`,
-    [limit, offset]
+     LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`
   );
 };
 

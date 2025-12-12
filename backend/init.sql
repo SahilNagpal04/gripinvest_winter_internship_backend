@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
     risk_appetite ENUM('low','moderate','high') DEFAULT 'moderate',
     balance DECIMAL(12,2) DEFAULT 100000.00,
     is_admin BOOLEAN DEFAULT FALSE,
+    otp VARCHAR(6) DEFAULT NULL,
+    otp_expiry DATETIME DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_email (email)

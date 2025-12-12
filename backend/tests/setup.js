@@ -17,7 +17,7 @@ const clearDatabase = async () => {
   await pool.query('DELETE FROM transaction_logs');
   await pool.query('DELETE FROM investments');
   await pool.query('DELETE FROM investment_products WHERE name LIKE "Test%"');
-  await pool.query('DELETE FROM users WHERE email LIKE "test%" OR email = "testinvest@example.com"');
+  await pool.query('DELETE FROM users WHERE email LIKE "test%" OR email LIKE "invest%" OR email LIKE "error%" OR email LIKE "coverage%"');
   await pool.query('SET FOREIGN_KEY_CHECKS = 1');
 };
 
