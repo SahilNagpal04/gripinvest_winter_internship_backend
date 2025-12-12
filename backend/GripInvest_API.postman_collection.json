@@ -1,0 +1,280 @@
+{
+  "info": {
+    "name": "Grip Invest API",
+    "_postman_id": "grip-invest-api",
+    "description": "Complete API collection for Grip Invest Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\",\n  \"risk_appetite\": \"moderate\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/auth/signup", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "signup"]}
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/auth/login", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "login"]}
+          }
+        },
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@gripinvest.in\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/auth/login", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "login"]}
+          }
+        },
+        {
+          "name": "Check Password Strength",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"Test@123\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/auth/check-password", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "check-password"]}
+          }
+        },
+        {
+          "name": "Request Password Reset",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/auth/request-password-reset", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "request-password-reset"]}
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPassword@123\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/auth/reset-password", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "reset-password"]}
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {"raw": "http://localhost:5000/api/auth/profile", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "profile"]}
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"John Updated\",\n  \"risk_appetite\": \"high\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/auth/profile", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "profile"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:5000/api/products", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "products"]}
+          }
+        },
+        {
+          "name": "Get Products by Filter",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:5000/api/products?risk_level=low&investment_type=bond", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "products"], "query": [{"key": "risk_level", "value": "low"}, {"key": "investment_type", "value": "bond"}]}
+          }
+        },
+        {
+          "name": "Get Top Products",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:5000/api/products/top?limit=3", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "products", "top"], "query": [{"key": "limit", "value": "3"}]}
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:5000/api/products/:id", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "products", ":id"], "variable": [{"key": "id", "value": "product_id_here"}]}
+          }
+        },
+        {
+          "name": "Get Recommended Products",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": {"raw": "http://localhost:5000/api/products/recommended/me", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "products", "recommended", "me"]}
+          }
+        },
+        {
+          "name": "Create Product (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Investment Product\",\n  \"investment_type\": \"mf\",\n  \"tenure_months\": 24,\n  \"annual_yield\": 11.5,\n  \"risk_level\": \"moderate\",\n  \"min_investment\": 2000,\n  \"max_investment\": 200000,\n  \"description\": \"A great investment option\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/products", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "products"]}
+          }
+        },
+        {
+          "name": "Update Product (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"annual_yield\": 12.0,\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/products/:id", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "products", ":id"], "variable": [{"key": "id", "value": "product_id_here"}]}
+          }
+        },
+        {
+          "name": "Delete Product (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+            "url": {"raw": "http://localhost:5000/api/products/:id", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "products", ":id"], "variable": [{"key": "id", "value": "product_id_here"}]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Investments",
+      "item": [
+        {
+          "name": "Create Investment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"product_id_here\",\n  \"amount\": 10000\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/investments", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "investments"]}
+          }
+        },
+        {
+          "name": "Get Portfolio",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": {"raw": "http://localhost:5000/api/investments/portfolio", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "investments", "portfolio"]}
+          }
+        },
+        {
+          "name": "Get Investment by ID",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": {"raw": "http://localhost:5000/api/investments/:id", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "investments", ":id"], "variable": [{"key": "id", "value": "investment_id_here"}]}
+          }
+        },
+        {
+          "name": "Cancel Investment",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": {"raw": "http://localhost:5000/api/investments/:id", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "investments", ":id"], "variable": [{"key": "id", "value": "investment_id_here"}]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "Get My Logs",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": {"raw": "http://localhost:5000/api/logs/me?limit=50", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "logs", "me"], "query": [{"key": "limit", "value": "50"}]}
+          }
+        },
+        {
+          "name": "Get My Error Logs",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": {"raw": "http://localhost:5000/api/logs/me/errors", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "logs", "me", "errors"]}
+          }
+        },
+        {
+          "name": "Get All Logs (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+            "url": {"raw": "http://localhost:5000/api/logs?limit=100&offset=0", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "logs"], "query": [{"key": "limit", "value": "100"}, {"key": "offset", "value": "0"}]}
+          }
+        },
+        {
+          "name": "Get Logs by User ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+            "url": {"raw": "http://localhost:5000/api/logs/user/:userId", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "logs", "user", ":userId"], "variable": [{"key": "userId", "value": "user_id_here"}]}
+          }
+        },
+        {
+          "name": "Get Logs by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": {"raw": "http://localhost:5000/api/logs/date-range?startDate=2025-01-01&endDate=2025-12-31", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "logs", "date-range"], "query": [{"key": "startDate", "value": "2025-01-01"}, {"key": "endDate", "value": "2025-12-31"}]}
+          }
+        }
+      ]
+    }
+  ]
+}

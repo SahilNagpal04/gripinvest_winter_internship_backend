@@ -1,0 +1,24 @@
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+const { protect } = require('../middleware/auth');
+const { 
+  signupValidation, 
+  loginValidation, 
+  resetPasswordRequestValidation,
+  resetPasswordValidation,
+  validate 
+} = require('../utils/validators');
+
+// Public routes
+router.post('/signup', signupValidation, validate, authController.signup);
+router.post('/login', loginValidation, validate, authController.login);
+router.post('/check-password', authController.checkPassword);
+router.post('/request-password-reset', resetPasswordRequestValidation, validate, authController.requestPasswordReset);
+router.post('/reset-password', resetPasswordValidation, validate, authController.resetPassword);
+
+// Protected routes
+router.get('/profile', protect, authController.getProfile);
+router.put('/profile', protect, authController.updateProfile);
+
+module.exports = router;
