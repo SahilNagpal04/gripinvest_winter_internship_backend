@@ -1,1 +1,0 @@
-# gripinvest_winter_internship_backend
