@@ -124,7 +124,7 @@ describe('Additional Coverage Tests', () => {
     expect([200, 401]).toContain(res.statusCode);
   });
 
-  it.skip('should get logs by email as admin', async () => {
+  it('should get logs by email as admin', async () => {
     const res = await request(app)
       .get('/api/logs/email/test@example.com')
       .set('Authorization', `Bearer ${adminToken}`);
