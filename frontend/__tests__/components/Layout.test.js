@@ -19,8 +19,8 @@ describe('Layout Component', () => {
         <div>Test Content</div>
       </Layout>
     );
-    const brand = screen.getByText(/Grip Invest/i);
-    expect(brand).toBeInTheDocument();
+    const brands = screen.getAllByText(/Grip Invest/i);
+    expect(brands.length).toBeGreaterThan(0);
   });
 
   it('renders children content', () => {

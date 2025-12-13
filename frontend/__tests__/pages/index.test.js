@@ -27,8 +27,8 @@ describe('Home Page', () => {
 
   it('renders login button', () => {
     render(<Home />);
-    const button = screen.getByText(/Login/i);
-    expect(button).toBeInTheDocument();
+    const buttons = screen.getAllByText(/Login/i);
+    expect(buttons.length).toBeGreaterThan(0);
   });
 
   it('renders features section', () => {
