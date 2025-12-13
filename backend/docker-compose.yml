@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # MySQL Database Service
   mysql:
     image: mysql:8.0
     container_name: gripinvest_mysql
@@ -18,6 +19,57 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - gripinvest-network
+
+  # Backend API Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gripinvest_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=gripinvest_db
+      - DB_PORT=3306
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRE=7d
+      - PORT=5000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - gripinvest-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: gripinvest_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
+    networks:
+      - gripinvest-network
 
 volumes:
   mysql_data:
+
+networks:
+  gripinvest-network:
+    driver: bridge

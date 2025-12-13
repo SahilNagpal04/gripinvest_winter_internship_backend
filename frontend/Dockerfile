@@ -1,4 +1,4 @@
-# Backend Dockerfile - builds and runs Express.js API
+# Frontend Dockerfile - builds and runs Next.js app
 
 # Use Node.js base image
 FROM node:18-alpine
@@ -12,11 +12,14 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy all backend files
+# Copy all frontend files
 COPY . .
 
-# Expose port 5000 for the API
-EXPOSE 5000
+# Build the Next.js application
+RUN npm run build
+
+# Expose port 3000 for the app
+EXPOSE 3000
 
 # Start the application
 CMD ["npm", "start"]

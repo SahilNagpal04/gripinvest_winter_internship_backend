@@ -2,10 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
-
-// Import middleware
-const { logTransaction } = require('./middleware/logger');
+const { testConnection } = require('./config/database');
 const { errorHandler } = require('./middleware/errorHandler');
+const { logTransaction } = require('./middleware/logger');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -19,35 +18,31 @@ dotenv.config();
 // Create Express app
 const app = express();
 
-// Security Middleware
+// Security middleware
 app.use(helmet());
 
-// CORS Configuration
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? 'https://your-production-domain.com' 
-    : 'http://localhost:3000',
-  credentials: true
-}));
+// CORS middleware - allow frontend to access API
+app.use(cors());
 
-// Body Parser Middleware
+// Body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Transaction Logger Middleware (log all requests)
+// Transaction logger middleware - logs all requests
 app.use(logTransaction);
 
-// Health Check Endpoint
-app.get('/health', (req, res) => {
+// Health check endpoint - shows if API and DB are working
+app.get('/health', async (req, res) => {
+  const dbStatus = await testConnection();
   res.status(200).json({
     status: 'success',
-    message: 'Server is running',
+    message: 'API is running',
+    database: dbStatus ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
   });
 });
 
-// Basic Route
+// Root endpoint
 app.get('/', (req, res) => {
   res.status(200).json({
     message: 'Welcome to Grip Invest API',
@@ -76,7 +71,7 @@ app.use((req, res, next) => {
   });
 });
 
-      // Global Error Handler
-      app.use(errorHandler);
+// Global Error Handler
+app.use(errorHandler);
 
-      module.exports = app;
+module.exports = app;
