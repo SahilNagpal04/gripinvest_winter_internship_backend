@@ -107,7 +107,9 @@ const deleteProduct = async (productId) => {
  */
 const getRecommendedProducts = async (riskAppetite) => {
   return await query(
-    'SELECT * FROM investment_products WHERE risk_level = ? AND is_active = TRUE ORDER BY annual_yield DESC LIMIT 5',
+    `SELECT * FROM investment_products 
+     WHERE risk_level = ? AND is_active = TRUE 
+     ORDER BY annual_yield DESC`,
     [riskAppetite]
   );
 };

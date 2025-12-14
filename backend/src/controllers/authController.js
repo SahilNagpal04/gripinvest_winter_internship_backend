@@ -10,28 +10,29 @@ const { generateOTP, sendOTP, verifyOTP } = require('../utils/emailService');
 const signup = async (req, res, next) => {
   try {
     const { first_name, last_name, email, password, risk_appetite } = req.body;
+    console.log(`[SIGNUP] Attempting signup for email: ${email}`);
 
-    // Check password strength
+    const validRiskLevels = ['low', 'moderate', 'high'];
+    if (risk_appetite && !validRiskLevels.includes(risk_appetite)) {
+      return next(new AppError('Invalid risk appetite. Must be low, moderate, or high', 400));
+    }
+
     const passwordStrength = checkPasswordStrength(password);
     if (!passwordStrength.isStrong) {
       return next(new AppError('Password is not strong enough. ' + passwordStrength.feedback.join(', '), 400));
     }
 
-    // Check if user already exists
     const existingUser = await userModel.findUserByEmail(email);
     if (existingUser) {
-      // If email not verified, delete the old unverified account
       if (!existingUser.email_verified) {
         await userModel.deleteUser(existingUser.id);
+        console.log(`[SIGNUP] Deleted unverified account for: ${email}`);
       } else {
         return next(new AppError('Email already registered', 400));
       }
     }
 
-    // Hash password
     const password_hash = await hashPassword(password);
-
-    // Create user (email_verified = false)
     const userId = await userModel.createUser({
       first_name,
       last_name,
@@ -40,11 +41,12 @@ const signup = async (req, res, next) => {
       risk_appetite: risk_appetite || 'moderate'
     });
 
-    // Generate and send OTP
     const otp = generateOTP();
     const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
     await userModel.store2FAOTP(userId, otp, expiryTime);
     await sendOTP(email, otp, 'Email Verification for Signup');
+
+    console.log(`[SIGNUP] User created successfully. UserId: ${userId}, Email: ${email}`);
 
     res.status(201).json({
       status: 'success',
@@ -56,6 +58,7 @@ const signup = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error(`[SIGNUP] Error: ${error.message}`);
     next(error);
   }
 };
@@ -66,37 +69,28 @@ const signup = async (req, res, next) => {
 const verifySignupOTP = async (req, res, next) => {
   try {
     const { userId, otp } = req.body;
+    console.log(`[VERIFY_SIGNUP] Verifying OTP for userId: ${userId}`);
 
-    console.log('\n=== OTP Verification Debug ===');
-    console.log('Received userId:', userId);
-    console.log('Received OTP:', otp, 'Type:', typeof otp);
-
-    // Get user
     const user = await userModel.findUserById(userId);
     if (!user) {
       return next(new AppError('User not found', 404));
     }
 
-    console.log('Stored OTP:', user.two_factor_code, 'Type:', typeof user.two_factor_code);
-    console.log('Stored Expiry:', user.two_factor_expires);
-    console.log('Is Expired:', new Date() > new Date(user.two_factor_expires));
-
     if (user.email_verified) {
       return next(new AppError('Email already verified', 400));
     }
 
-    // Verify OTP
     const verification = verifyOTP(user.two_factor_code, user.two_factor_expires, otp);
-    console.log('Verification result:', verification);
     if (!verification.valid) {
       return next(new AppError(verification.message, 400));
     }
 
-    // Mark email as verified
     await userModel.verifyEmail(userId);
+    await userModel.clear2FAOTP(userId);
 
-    // Generate token
     const token = generateToken({ userId: user.id, email: user.email });
+
+    console.log(`[VERIFY_SIGNUP] Email verified successfully for: ${user.email}`);
 
     res.status(200).json({
       status: 'success',
@@ -114,6 +108,7 @@ const verifySignupOTP = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error(`[VERIFY_SIGNUP] Error: ${error.message}`);
     next(error);
   }
 };
@@ -124,30 +119,29 @@ const verifySignupOTP = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    console.log(`[LOGIN] Login attempt for email: ${email}`);
 
-    // Find user
     const user = await userModel.findUserByEmail(email);
     if (!user) {
       return next(new AppError('Invalid email or password', 401));
     }
 
-    // Check if email is verified
     if (!user.email_verified) {
       return next(new AppError('Please verify your email first', 401));
     }
 
-    // Check password
     const isPasswordValid = await comparePassword(password, user.password_hash);
     if (!isPasswordValid) {
       return next(new AppError('Invalid email or password', 401));
     }
 
-    // If 2FA is enabled, send OTP
     if (user.two_factor_enabled) {
       const otp = generateOTP();
       const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
       await userModel.store2FAOTP(user.id, otp, expiryTime);
       await sendOTP(email, otp, 'Login Verification');
+
+      console.log(`[LOGIN] 2FA OTP sent for: ${email}`);
 
       return res.status(200).json({
         status: 'success',
@@ -159,8 +153,9 @@ const login = async (req, res, next) => {
       });
     }
 
-    // No 2FA - direct login
     const token = generateToken({ userId: user.id, email: user.email });
+
+    console.log(`[LOGIN] Login successful for: ${email}`);
 
     res.status(200).json({
       status: 'success',
@@ -180,6 +175,7 @@ const login = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error(`[LOGIN] Error: ${error.message}`);
     next(error);
   }
 };
@@ -190,24 +186,23 @@ const login = async (req, res, next) => {
 const verifyLogin2FA = async (req, res, next) => {
   try {
     const { userId, otp } = req.body;
+    console.log(`[VERIFY_LOGIN] Verifying 2FA OTP for userId: ${userId}`);
 
-    // Get user
     const user = await userModel.findUserById(userId);
     if (!user) {
       return next(new AppError('User not found', 404));
     }
 
-    // Verify OTP
     const verification = verifyOTP(user.two_factor_code, user.two_factor_expires, otp);
     if (!verification.valid) {
       return next(new AppError(verification.message, 400));
     }
 
-    // Clear OTP
     await userModel.clear2FAOTP(userId);
 
-    // Generate token
     const token = generateToken({ userId: user.id, email: user.email });
+
+    console.log(`[VERIFY_LOGIN] 2FA verification successful for: ${user.email}`);
 
     res.status(200).json({
       status: 'success',
@@ -227,6 +222,7 @@ const verifyLogin2FA = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error(`[VERIFY_LOGIN] Error: ${error.message}`);
     next(error);
   }
 };
@@ -261,33 +257,30 @@ const checkPassword = async (req, res, next) => {
 const requestPasswordReset = async (req, res, next) => {
   try {
     const { email } = req.body;
+    console.log(`[PASSWORD_RESET] Reset requested for email: ${email}`);
 
-    // Find user
     const user = await userModel.findUserByEmail(email);
     if (!user) {
       return next(new AppError('No user found with this email', 404));
     }
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Set OTP expiry (10 minutes from now)
+    const otp = generateOTP();
     const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Store OTP
     await userModel.storePasswordResetOTP(email, otp, expiryTime);
+    await sendOTP(email, otp, 'Password Reset');
 
-    // In production, send OTP via email
-    // For now, we'll return it in response (NOT SECURE - only for development)
+    console.log(`[PASSWORD_RESET] OTP sent successfully to: ${email}`);
+
     res.status(200).json({
       status: 'success',
       message: 'OTP sent to your email',
       data: {
-        otp: process.env.NODE_ENV === 'development' ? otp : undefined,
         expiresIn: '10 minutes'
       }
     });
   } catch (error) {
+    console.error(`[PASSWORD_RESET] Error: ${error.message}`);
     next(error);
   }
 };
@@ -298,30 +291,29 @@ const requestPasswordReset = async (req, res, next) => {
 const resetPassword = async (req, res, next) => {
   try {
     const { email, otp, newPassword } = req.body;
+    console.log(`[RESET_PASSWORD] Attempting password reset for: ${email}`);
 
-    // Verify OTP
     const user = await userModel.verifyOTP(email, otp);
     if (!user) {
       return next(new AppError('Invalid or expired OTP', 400));
     }
 
-    // Check new password strength
     const passwordStrength = checkPasswordStrength(newPassword);
     if (!passwordStrength.isStrong) {
       return next(new AppError('Password is not strong enough. ' + passwordStrength.feedback.join(', '), 400));
     }
 
-    // Hash new password
     const password_hash = await hashPassword(newPassword);
-
-    // Update password
     await userModel.updatePassword(user.id, password_hash);
+
+    console.log(`[RESET_PASSWORD] Password reset successful for: ${email}`);
 
     res.status(200).json({
       status: 'success',
       message: 'Password reset successful. Please login with your new password'
     });
   } catch (error) {
+    console.error(`[RESET_PASSWORD] Error: ${error.message}`);
     next(error);
   }
 };
@@ -350,6 +342,14 @@ const getProfile = async (req, res, next) => {
 const updateProfile = async (req, res, next) => {
   try {
     const { first_name, last_name, risk_appetite } = req.body;
+    console.log(`[UPDATE_PROFILE] Updating profile for userId: ${req.user.id}`);
+
+    if (risk_appetite) {
+      const validRiskLevels = ['low', 'moderate', 'high'];
+      if (!validRiskLevels.includes(risk_appetite)) {
+        return next(new AppError('Invalid risk appetite. Must be low, moderate, or high', 400));
+      }
+    }
 
     const updateData = {};
     if (first_name) updateData.first_name = first_name;
@@ -357,6 +357,8 @@ const updateProfile = async (req, res, next) => {
     if (risk_appetite) updateData.risk_appetite = risk_appetite;
 
     const updatedUser = await userModel.updateUser(req.user.id, updateData);
+
+    console.log(`[UPDATE_PROFILE] Profile updated successfully for userId: ${req.user.id}`);
 
     res.status(200).json({
       status: 'success',
@@ -366,6 +368,7 @@ const updateProfile = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error(`[UPDATE_PROFILE] Error: ${error.message}`);
     next(error);
   }
 };
@@ -375,13 +378,16 @@ const updateProfile = async (req, res, next) => {
  */
 const enable2FA = async (req, res, next) => {
   try {
+    console.log(`[ENABLE_2FA] Enabling 2FA for userId: ${req.user.id}`);
     await userModel.update2FAStatus(req.user.id, true);
+    console.log(`[ENABLE_2FA] 2FA enabled successfully for userId: ${req.user.id}`);
 
     res.status(200).json({
       status: 'success',
       message: '2FA enabled successfully'
     });
   } catch (error) {
+    console.error(`[ENABLE_2FA] Error: ${error.message}`);
     next(error);
   }
 };
@@ -391,13 +397,16 @@ const enable2FA = async (req, res, next) => {
  */
 const disable2FA = async (req, res, next) => {
   try {
+    console.log(`[DISABLE_2FA] Disabling 2FA for userId: ${req.user.id}`);
     await userModel.update2FAStatus(req.user.id, false);
+    console.log(`[DISABLE_2FA] 2FA disabled successfully for userId: ${req.user.id}`);
 
     res.status(200).json({
       status: 'success',
       message: '2FA disabled successfully'
     });
   } catch (error) {
+    console.error(`[DISABLE_2FA] Error: ${error.message}`);
     next(error);
   }
 };
@@ -408,6 +417,7 @@ const disable2FA = async (req, res, next) => {
 const resendOTP = async (req, res, next) => {
   try {
     const { userId } = req.body;
+    console.log(`[RESEND_OTP] Resending OTP for userId: ${userId}`);
 
     if (!userId) {
       return next(new AppError('User ID is required', 400));
@@ -418,18 +428,19 @@ const resendOTP = async (req, res, next) => {
       return next(new AppError('User not found', 404));
     }
 
-    // Generate and send new OTP (this overwrites the old one)
     const otp = generateOTP();
     const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
     await userModel.store2FAOTP(userId, otp, expiryTime);
     await sendOTP(user.email, otp, 'OTP Resend');
+
+    console.log(`[RESEND_OTP] OTP resent successfully to: ${user.email}`);
 
     res.status(200).json({
       status: 'success',
       message: 'New OTP sent successfully. Previous OTP is now invalid.'
     });
   } catch (error) {
-    console.error('Resend OTP Error:', error);
+    console.error(`[RESEND_OTP] Error: ${error.message}`);
     next(error);
   }
 };

@@ -19,20 +19,33 @@ export default function Products() {
     risk_level: '',
     search: '',
   });
+  // Active tab state
+  const [activeTab, setActiveTab] = useState('all');
   // Sort state
   const [sortBy, setSortBy] = useState('');
 
+  // Check if showing recommended products
+  const showingRecommended = router.query.recommended === 'true';
+  
   // Load products on mount
   useEffect(() => {
     // Check for risk filter from URL
     if (router.query.risk) {
       setFilters(prev => ({ ...prev, risk_level: router.query.risk }));
     }
-    loadProducts();
-    if (isAuthenticated()) {
-      loadRecommended();
+    
+    if (showingRecommended) {
+      if (isAuthenticated()) {
+        loadRecommended();
+        setLoading(false);
+      }
+    } else {
+      loadProducts();
+      if (isAuthenticated()) {
+        loadRecommended();
+      }
     }
-  }, [router.query.risk]);
+  }, [router.query.recommended]);
 
   // Fetch all products
   const loadProducts = async () => {
@@ -109,12 +122,24 @@ export default function Products() {
       <div className="space-y-6">
         {/* Page header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Investment Products</h1>
-          <p className="text-gray-600 mt-1">Explore our diverse range of investment options</p>
+          {showingRecommended ? (
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6 mb-6">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-3xl">🤖</span>
+                <h1 className="text-3xl font-bold text-gray-900">AI Recommended for You</h1>
+              </div>
+              <p className="text-gray-600">Personalized picks based on your risk appetite and investment goals</p>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold text-gray-900">Investment Products</h1>
+              <p className="text-gray-600 mt-1">Explore our diverse range of investment options</p>
+            </>
+          )}
         </div>
 
         {/* AI Recommended Products */}
-        {recommended.length > 0 && (
+        {!showingRecommended && recommended.length > 0 && (
           <div className="card bg-gradient-to-r from-purple-50 to-blue-50">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">🤖</span>
@@ -142,10 +167,36 @@ export default function Products() {
           </div>
         )}
 
+        {/* Tabs Navigation */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {[
+            { id: 'all', label: 'All', type: '' },
+            { id: 'bond', label: 'Bonds', type: 'bond' },
+            { id: 'fd', label: 'Fixed Deposits', type: 'fd' },
+            { id: 'mf', label: 'Mutual Funds', type: 'mf' },
+            { id: 'etf', label: 'ETFs', type: 'etf' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setFilters({ ...filters, investment_type: tab.type });
+              }}
+              className={`px-6 py-2 rounded-full font-medium whitespace-nowrap transition-all ${
+                activeTab === tab.id
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Filters & Sort */}
         <div className="card">
-          <h3 className="font-bold text-gray-900 mb-4">Filters & Sort</h3>
-          <div className="grid md:grid-cols-5 gap-4">
+          <h3 className="font-bold text-gray-900 mb-4">Additional Filters</h3>
+          <div className="grid md:grid-cols-4 gap-4">
             {/* Search */}
             <input
               type="text"
@@ -155,20 +206,6 @@ export default function Products() {
               placeholder="Search products..."
               className="input"
             />
-
-            {/* Investment Type Filter */}
-            <select
-              name="investment_type"
-              value={filters.investment_type}
-              onChange={handleFilterChange}
-              className="input"
-            >
-              <option value="">All Types</option>
-              <option value="bond">Bonds</option>
-              <option value="fd">Fixed Deposits</option>
-              <option value="mf">Mutual Funds</option>
-              <option value="etf">ETFs</option>
-            </select>
 
             {/* Risk Level Filter */}
             <select
@@ -200,7 +237,11 @@ export default function Products() {
 
             {/* Reset Button */}
             <button
-              onClick={() => { resetFilters(); setSortBy(''); }}
+              onClick={() => { 
+                resetFilters(); 
+                setSortBy(''); 
+                setActiveTab('all');
+              }}
               className="btn bg-gray-200 text-gray-800 hover:bg-gray-300"
             >
               Reset All
@@ -213,13 +254,13 @@ export default function Products() {
           <div className="flex justify-center items-center h-64">
             <div className="spinner"></div>
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : (showingRecommended ? recommended.filter(p => !filters.investment_type || p.investment_type === filters.investment_type) : filteredProducts).length === 0 ? (
           <div className="card text-center py-12">
             <p className="text-gray-600">No products found matching your criteria.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-6">
-            {filteredProducts.map((product) => (
+            {(showingRecommended ? recommended.filter(p => !filters.investment_type || p.investment_type === filters.investment_type) : filteredProducts).map((product) => (
               <div
                 key={product.id}
                 className="card hover:shadow-lg transition-shadow cursor-pointer"
@@ -227,7 +268,14 @@ export default function Products() {
               >
                 {/* Product header */}
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-bold text-lg text-gray-900">{product.name}</h3>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg text-gray-900">{product.name}</h3>
+                    {showingRecommended && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 mt-1">
+                        ✨ AI Pick
+                      </span>
+                    )}
+                  </div>
                   <span className={`px-2 py-1 rounded text-xs font-medium ${getRiskColor(product.risk_level)}`}>
                     {product.risk_level}
                   </span>

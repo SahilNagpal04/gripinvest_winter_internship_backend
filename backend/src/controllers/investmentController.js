@@ -2,6 +2,7 @@ const investmentModel = require('../models/investmentModel');
 const productModel = require('../models/productModel');
 const userModel = require('../models/userModel');
 const { AppError } = require('../middleware/errorHandler');
+const db = require('../config/database');
 
 /**
  * Create new investment
@@ -10,64 +11,72 @@ const createInvestment = async (req, res, next) => {
 	try {
 		const { product_id, amount } = req.body;
 		const userId = req.user.id;
+		console.log(`[CREATE_INVESTMENT] User ${userId} creating investment for product ${product_id}, amount: ₹${amount}`);
 
-		// Validate amount
 		if (!amount || amount <= 0) {
 			return next(new AppError('Invalid investment amount', 400));
 		}
 
-		// Get product details
 		const product = await productModel.getProductById(product_id);
 		if (!product) {
 			return next(new AppError('Product not found', 404));
 		}
 
-		// Check minimum investment
 		if (amount < product.min_investment) {
 			return next(new AppError(`Minimum investment for this product is ₹${product.min_investment}`, 400));
 		}
 
-		// Check maximum investment
 		if (product.max_investment && amount > product.max_investment) {
 			return next(new AppError(`Maximum investment for this product is ₹${product.max_investment}`, 400));
 		}
 
-		// Check user balance
 		const userBalance = await userModel.getUserBalance(userId);
 		if (amount > userBalance) {
 			return next(new AppError(`Insufficient balance. Your current balance is ₹${userBalance}`, 400));
 		}
 
-		// Calculate expected return
 		const expectedReturn = amount * (1 + (product.annual_yield / 100) * (product.tenure_months / 12));
 
-		// Calculate maturity date
 		const maturityDate = new Date();
 		maturityDate.setMonth(maturityDate.getMonth() + product.tenure_months);
 
-		// Create investment
-		const investmentId = await investmentModel.createInvestment({
-			user_id: userId,
-			product_id,
-			amount,
-			expected_return: expectedReturn,
-			maturity_date: maturityDate.toISOString().split('T')[0]
-		});
+		const connection = await db.getConnection();
+		try {
+			await connection.beginTransaction();
 
-		// Deduct amount from user balance
-		await userModel.updateUserBalance(userId, -amount);
+			const investmentId = await investmentModel.createInvestment({
+				user_id: userId,
+				product_id,
+				amount,
+				expected_return: expectedReturn,
+				maturity_date: maturityDate.toISOString().split('T')[0]
+			});
 
-		// Get created investment
-		const investment = await investmentModel.getInvestmentById(investmentId);
+			await userModel.updateUserBalance(userId, -amount);
 
-		res.status(201).json({
-			status: 'success',
-			message: 'Investment created successfully',
-			data: {
-				investment
-			}
-		});
+			await connection.commit();
+
+			const investment = await investmentModel.getInvestmentById(investmentId);
+
+			console.log(`[CREATE_INVESTMENT] Investment created successfully. InvestmentId: ${investmentId}`);
+
+			res.status(201).json({
+				status: 'success',
+				message: 'Investment created successfully',
+				data: {
+					investment
+				}
+			});
+		} catch (error) {
+			await connection.rollback();
+			console.error(`[CREATE_INVESTMENT] Transaction failed: ${error.message}`);
+			next(new AppError('Failed to create investment. Your balance has not been deducted.', 500));
+			return;
+		} finally {
+			connection.release();
+		}
 	} catch (error) {
+		console.error(`[CREATE_INVESTMENT] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -78,13 +87,15 @@ const createInvestment = async (req, res, next) => {
 const getPortfolio = async (req, res, next) => {
 	try {
 		const userId = req.user.id;
+		console.log(`[GET_PORTFOLIO] Fetching portfolio for userId: ${userId}`);
 
 		const investments = await investmentModel.getUserPortfolio(userId);
 		const summary = await investmentModel.getPortfolioSummary(userId);
 		const riskDistribution = await investmentModel.getPortfolioRiskDistribution(userId);
 
-		// AI-generated portfolio insights
 		const insights = generatePortfolioInsights(summary, riskDistribution);
+
+		console.log(`[GET_PORTFOLIO] Retrieved ${investments.length} investments for userId: ${userId}`);
 
 		res.status(200).json({
 			status: 'success',
@@ -96,6 +107,7 @@ const getPortfolio = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
+		console.error(`[GET_PORTFOLIO] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -107,6 +119,7 @@ const getInvestmentById = async (req, res, next) => {
 	try {
 		const { id } = req.params;
 		const userId = req.user.id;
+		console.log(`[GET_INVESTMENT_BY_ID] Fetching investment ${id} for userId: ${userId}`);
 
 		const investment = await investmentModel.getInvestmentById(id);
 
@@ -114,10 +127,11 @@ const getInvestmentById = async (req, res, next) => {
 			return next(new AppError('Investment not found', 404));
 		}
 
-		// Check if investment belongs to user (unless admin)
-		if (investment.user_id !== userId && !req.user.is_admin) {
+		if (Number(investment.user_id) !== Number(userId) && !req.user.is_admin) {
 			return next(new AppError('Access denied', 403));
 		}
+
+		console.log(`[GET_INVESTMENT_BY_ID] Investment retrieved successfully: ${id}`);
 
 		res.status(200).json({
 			status: 'success',
@@ -126,6 +140,7 @@ const getInvestmentById = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
+		console.error(`[GET_INVESTMENT_BY_ID] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -137,6 +152,7 @@ const cancelInvestment = async (req, res, next) => {
 	try {
 		const { id } = req.params;
 		const userId = req.user.id;
+		console.log(`[CANCEL_INVESTMENT] User ${userId} cancelling investment: ${id}`);
 
 		const investment = await investmentModel.getInvestmentById(id);
 
@@ -144,27 +160,39 @@ const cancelInvestment = async (req, res, next) => {
 			return next(new AppError('Investment not found', 404));
 		}
 
-		// Check if investment belongs to user
-		if (investment.user_id !== userId) {
+		if (Number(investment.user_id) !== Number(userId)) {
 			return next(new AppError('Access denied', 403));
 		}
 
-		// Check if already cancelled or matured
 		if (investment.status !== 'active') {
 			return next(new AppError(`Cannot cancel ${investment.status} investment`, 400));
 		}
 
-		// Cancel investment
-		await investmentModel.cancelInvestment(id);
+		const connection = await db.getConnection();
+		try {
+			await connection.beginTransaction();
 
-		// Refund amount to user
-		await userModel.updateUserBalance(userId, investment.amount);
+			await investmentModel.cancelInvestment(id);
+			await userModel.updateUserBalance(userId, investment.amount);
 
-		res.status(200).json({
-			status: 'success',
-			message: 'Investment cancelled successfully. Amount refunded to your balance'
-		});
+			await connection.commit();
+
+			console.log(`[CANCEL_INVESTMENT] Investment cancelled successfully: ${id}`);
+
+			res.status(200).json({
+				status: 'success',
+				message: 'Investment cancelled successfully. Amount refunded to your balance'
+			});
+		} catch (error) {
+			await connection.rollback();
+			console.error(`[CANCEL_INVESTMENT] Transaction failed: ${error.message}`);
+			next(new AppError('Failed to cancel investment. No changes have been made.', 500));
+			return;
+		} finally {
+			connection.release();
+		}
 	} catch (error) {
+		console.error(`[CANCEL_INVESTMENT] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -175,7 +203,6 @@ const cancelInvestment = async (req, res, next) => {
 const generatePortfolioInsights = (summary, riskDistribution) => {
 	const insights = [];
 
-	// Calculate portfolio diversity
 	const riskTypes = riskDistribution.length;
 	if (riskTypes === 1) {
 		insights.push('💡 Consider diversifying across different risk levels to balance your portfolio');
@@ -183,7 +210,6 @@ const generatePortfolioInsights = (summary, riskDistribution) => {
 		insights.push('✅ Great! Your portfolio is well-diversified across risk levels');
 	}
 
-	// Check returns
 	const totalGains = parseFloat(summary.total_gains) || 0;
 	const totalInvested = parseFloat(summary.total_invested) || 0;
   
@@ -197,13 +223,12 @@ const generatePortfolioInsights = (summary, riskDistribution) => {
 		} else {
 			insights.push(`💰 Consider exploring higher-yield products to improve returns`);
 		}
-	}
 
-	// Risk distribution insights
-	riskDistribution.forEach(risk => {
-		const percentage = ((risk.total_amount / totalInvested) * 100).toFixed(1);
-		insights.push(`${risk.risk_level.toUpperCase()} risk: ${percentage}% of portfolio`);
-	});
+		riskDistribution.forEach(risk => {
+			const percentage = ((risk.total_amount / totalInvested) * 100).toFixed(1);
+			insights.push(`${risk.risk_level.toUpperCase()} risk: ${percentage}% of portfolio`);
+		});
+	}
 
 	return insights;
 };
@@ -214,7 +239,11 @@ const generatePortfolioInsights = (summary, riskDistribution) => {
 const getNotifications = async (req, res, next) => {
 	try {
 		const userId = req.user.id;
+		console.log(`[GET_NOTIFICATIONS] Fetching notifications for userId: ${userId}`);
+
 		const notifications = await investmentModel.getMaturedInvestments(userId);
+
+		console.log(`[GET_NOTIFICATIONS] Retrieved ${notifications.length} notifications`);
 
 		res.status(200).json({
 			status: 'success',
@@ -223,6 +252,7 @@ const getNotifications = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
+		console.error(`[GET_NOTIFICATIONS] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -233,13 +263,28 @@ const getNotifications = async (req, res, next) => {
 const markNotificationRead = async (req, res, next) => {
 	try {
 		const { id } = req.params;
+		const userId = req.user.id;
+		console.log(`[MARK_NOTIFICATION_READ] Marking notification ${id} as read for userId: ${userId}`);
+
+		const investment = await investmentModel.getInvestmentById(id);
+		if (!investment) {
+			return next(new AppError('Investment not found', 404));
+		}
+
+		if (Number(investment.user_id) !== Number(userId)) {
+			return next(new AppError('Access denied', 403));
+		}
+
 		await investmentModel.markNotificationRead(id);
+
+		console.log(`[MARK_NOTIFICATION_READ] Notification marked as read: ${id}`);
 
 		res.status(200).json({
 			status: 'success',
 			message: 'Notification marked as read'
 		});
 	} catch (error) {
+		console.error(`[MARK_NOTIFICATION_READ] Error: ${error.message}`);
 		next(error);
 	}
 };

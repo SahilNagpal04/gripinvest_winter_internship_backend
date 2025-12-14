@@ -8,8 +8,15 @@ const getMyLogs = async (req, res, next) => {
 	try {
 		const userId = req.user.id;
 		const limit = parseInt(req.query.limit) || 100;
+		console.log(`[GET_MY_LOGS] Fetching logs for userId: ${userId}, limit: ${limit}`);
+
+		if (isNaN(limit) || limit < 1 || limit > 1000) {
+			return next(new AppError('Limit must be between 1 and 1000', 400));
+		}
 
 		const logs = await logModel.getLogsByUserId(userId, limit);
+
+		console.log(`[GET_MY_LOGS] Retrieved ${logs.length} logs for userId: ${userId}`);
 
 		res.status(200).json({
 			status: 'success',
@@ -19,6 +26,7 @@ const getMyLogs = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
+		console.error(`[GET_MY_LOGS] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -29,12 +37,14 @@ const getMyLogs = async (req, res, next) => {
 const getMyErrorLogs = async (req, res, next) => {
 	try {
 		const userId = req.user.id;
+		console.log(`[GET_MY_ERROR_LOGS] Fetching error logs for userId: ${userId}`);
 
 		const errorLogs = await logModel.getErrorLogsByUserId(userId);
 		const errorSummary = await logModel.getErrorSummary(userId);
 
-		// AI-generated error insights
 		const insights = generateErrorInsights(errorSummary);
+
+		console.log(`[GET_MY_ERROR_LOGS] Retrieved ${errorLogs.length} error logs for userId: ${userId}`);
 
 		res.status(200).json({
 			status: 'success',
@@ -46,6 +56,7 @@ const getMyErrorLogs = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
+		console.error(`[GET_MY_ERROR_LOGS] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -57,8 +68,19 @@ const getAllLogs = async (req, res, next) => {
 	try {
 		const limit = parseInt(req.query.limit) || 100;
 		const offset = parseInt(req.query.offset) || 0;
+		console.log(`[GET_ALL_LOGS] Admin fetching logs, limit: ${limit}, offset: ${offset}`);
+
+		if (isNaN(limit) || limit < 1 || limit > 1000) {
+			return next(new AppError('Limit must be between 1 and 1000', 400));
+		}
+
+		if (isNaN(offset) || offset < 0) {
+			return next(new AppError('Offset must be a non-negative number', 400));
+		}
 
 		const logs = await logModel.getAllLogs(limit, offset);
+
+		console.log(`[GET_ALL_LOGS] Retrieved ${logs.length} logs`);
 
 		res.status(200).json({
 			status: 'success',
@@ -68,6 +90,7 @@ const getAllLogs = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
+		console.error(`[GET_ALL_LOGS] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -79,8 +102,19 @@ const getLogsByUserId = async (req, res, next) => {
 	try {
 		const { userId } = req.params;
 		const limit = parseInt(req.query.limit) || 100;
+		console.log(`[GET_LOGS_BY_USER_ID] Admin fetching logs for userId: ${userId}`);
+
+		if (!userId || isNaN(parseInt(userId))) {
+			return next(new AppError('Valid user ID is required', 400));
+		}
+
+		if (isNaN(limit) || limit < 1 || limit > 1000) {
+			return next(new AppError('Limit must be between 1 and 1000', 400));
+		}
 
 		const logs = await logModel.getLogsByUserId(userId, limit);
+
+		console.log(`[GET_LOGS_BY_USER_ID] Retrieved ${logs.length} logs for userId: ${userId}`);
 
 		res.status(200).json({
 			status: 'success',
@@ -90,6 +124,7 @@ const getLogsByUserId = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
+		console.error(`[GET_LOGS_BY_USER_ID] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -101,8 +136,19 @@ const getLogsByEmail = async (req, res, next) => {
 	try {
 		const { email } = req.params;
 		const limit = parseInt(req.query.limit) || 100;
+		console.log(`[GET_LOGS_BY_EMAIL] Admin fetching logs for email: ${email}`);
+
+		if (!email || !email.includes('@')) {
+			return next(new AppError('Valid email is required', 400));
+		}
+
+		if (isNaN(limit) || limit < 1 || limit > 1000) {
+			return next(new AppError('Limit must be between 1 and 1000', 400));
+		}
 
 		const logs = await logModel.getLogsByEmail(email, limit);
+
+		console.log(`[GET_LOGS_BY_EMAIL] Retrieved ${logs.length} logs for email: ${email}`);
 
 		res.status(200).json({
 			status: 'success',
@@ -112,6 +158,7 @@ const getLogsByEmail = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
+		console.error(`[GET_LOGS_BY_EMAIL] Error: ${error.message}`);
 		next(error);
 	}
 };
@@ -122,13 +169,27 @@ const getLogsByEmail = async (req, res, next) => {
 const getLogsByDateRange = async (req, res, next) => {
 	try {
 		const { startDate, endDate } = req.query;
+		console.log(`[GET_LOGS_BY_DATE_RANGE] Fetching logs from ${startDate} to ${endDate}`);
 
 		if (!startDate || !endDate) {
 			return next(new AppError('Start date and end date are required', 400));
 		}
 
+		const startDateObj = new Date(startDate);
+		const endDateObj = new Date(endDate);
+
+		if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+			return next(new AppError('Invalid date format. Use YYYY-MM-DD', 400));
+		}
+
+		if (startDateObj > endDateObj) {
+			return next(new AppError('Start date must be before end date', 400));
+		}
+
 		const userId = req.user.is_admin ? null : req.user.id;
 		const logs = await logModel.getLogsByDateRange(startDate, endDate, userId);
+
+		console.log(`[GET_LOGS_BY_DATE_RANGE] Retrieved ${logs.length} logs`);
 
 		res.status(200).json({
 			status: 'success',
@@ -138,6 +199,7 @@ const getLogsByDateRange = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
+		console.error(`[GET_LOGS_BY_DATE_RANGE] Error: ${error.message}`);
 		next(error);
 	}
 };

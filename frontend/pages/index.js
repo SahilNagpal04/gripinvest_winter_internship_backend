@@ -97,7 +97,7 @@ export default function Home() {
               <div className="flex-1">
                 <h3 className="text-xl font-bold mb-2">AI Insights</h3>
                 <p className="text-gray-700 mb-3">{portfolio?.aiInsight || "Your portfolio is well-diversified across multiple asset classes. Consider adding more bonds to reduce overall risk."}</p>
-                <button onClick={() => router.push('/products/recommended/me')} className="text-blue-600 font-semibold hover:underline">View Recommendations →</button>
+                <button onClick={() => router.push('/products?recommended=true')} className="text-blue-600 font-semibold hover:underline">View Recommendations →</button>
               </div>
             </div>
           </div>
