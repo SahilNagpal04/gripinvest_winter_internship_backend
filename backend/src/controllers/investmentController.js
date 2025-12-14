@@ -208,9 +208,47 @@ const generatePortfolioInsights = (summary, riskDistribution) => {
 	return insights;
 };
 
+/**
+ * Get notifications for user
+ */
+const getNotifications = async (req, res, next) => {
+	try {
+		const userId = req.user.id;
+		const notifications = await investmentModel.getMaturedInvestments(userId);
+
+		res.status(200).json({
+			status: 'success',
+			data: {
+				notifications
+			}
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
+/**
+ * Mark notification as read
+ */
+const markNotificationRead = async (req, res, next) => {
+	try {
+		const { id } = req.params;
+		await investmentModel.markNotificationRead(id);
+
+		res.status(200).json({
+			status: 'success',
+			message: 'Notification marked as read'
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
 module.exports = {
 	createInvestment,
 	getPortfolio,
 	getInvestmentById,
-	cancelInvestment
+	cancelInvestment,
+	getNotifications,
+	markNotificationRead
 };

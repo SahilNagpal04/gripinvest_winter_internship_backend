@@ -68,7 +68,7 @@ const getInvestmentById = async (investmentId) => {
  * Get portfolio summary
  */
 const getPortfolioSummary = async (userId) => {
-  const result = await query(
+  const active = await query(
     `SELECT 
        COUNT(*) as total_investments,
        SUM(amount) as total_invested,
@@ -79,7 +79,18 @@ const getPortfolioSummary = async (userId) => {
     [userId]
   );
 
-  return result[0];
+  const matured = await query(
+    `SELECT 
+       SUM(expected_return - amount) as matured_profit
+     FROM investments
+     WHERE user_id = ? AND status = 'matured'`,
+    [userId]
+  );
+
+  return {
+    ...active[0],
+    total_returns: matured[0].matured_profit || 0
+  };
 };
 
 /**
@@ -118,6 +129,34 @@ const cancelInvestment = async (investmentId) => {
   return await updateInvestmentStatus(investmentId, 'cancelled');
 };
 
+/**
+ * Get matured investments for notifications
+ */
+const getMaturedInvestments = async (userId) => {
+  return await query(
+    `SELECT 
+       i.id,
+       i.amount,
+       i.expected_return,
+       i.maturity_date,
+       p.name as product_name
+     FROM investments i
+     JOIN investment_products p ON i.product_id = p.id
+     WHERE i.user_id = ? 
+       AND i.status = 'matured'
+       AND i.notification_read = FALSE
+     ORDER BY i.maturity_date DESC`,
+    [userId]
+  );
+};
+
+const markNotificationRead = async (investmentId) => {
+  await query(
+    'UPDATE investments SET notification_read = TRUE WHERE id = ?',
+    [investmentId]
+  );
+};
+
 module.exports = {
   createInvestment,
   getUserPortfolio,
@@ -125,5 +164,7 @@ module.exports = {
   getPortfolioSummary,
   getPortfolioRiskDistribution,
   updateInvestmentStatus,
-  cancelInvestment
+  cancelInvestment,
+  getMaturedInvestments,
+  markNotificationRead
 };

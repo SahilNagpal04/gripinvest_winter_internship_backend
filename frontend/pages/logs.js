@@ -1,217 +1,227 @@
-// Logs Page - view transaction logs
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
-import { logsAPI } from '../utils/api';
-import { isAuthenticated, formatDate } from '../utils/auth';
+import { isAuthenticated } from '../utils/auth';
+import api from '../utils/api';
 
-export default function Logs() {
+export default function TransactionLogs() {
   const router = useRouter();
-  // Logs state
   const [logs, setLogs] = useState([]);
-  // Error logs state
-  const [errorLogs, setErrorLogs] = useState([]);
-  // Active tab state
-  const [activeTab, setActiveTab] = useState('all');
-  // Loading state
+  const [errorSummary, setErrorSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Error state
-  const [error, setError] = useState('');
+  const [filters, setFilters] = useState({
+    status: 'all',
+    method: 'all',
+    days: 7
+  });
+  const [expandedRow, setExpandedRow] = useState(null);
 
-  // Load logs on mount
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push('/login');
       return;
     }
-
     loadLogs();
-  }, []);
+  }, [filters]);
 
-  // Fetch logs
   const loadLogs = async () => {
     try {
-      // Load all logs
-      const allResponse = await logsAPI.getMy();
-      setLogs(allResponse.data.data.logs);
-
-      // Load error logs
-      const errorResponse = await logsAPI.getMyErrors();
-      setErrorLogs(errorResponse.data.data.logs);
+      const res = await api.get('/logs/me');
+      setLogs(res.data.data.logs || []);
     } catch (err) {
-      setError('Failed to load logs');
-      console.error(err);
+      console.error('Failed to load logs:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Get status color
-  const getStatusColor = (statusCode) => {
-    if (statusCode >= 200 && statusCode < 300) {
-      return 'bg-green-100 text-green-800';
-    } else if (statusCode >= 400 && statusCode < 500) {
-      return 'bg-yellow-100 text-yellow-800';
-    } else if (statusCode >= 500) {
-      return 'bg-red-100 text-red-800';
+  const generateAISummary = () => {
+    const errors = logs.filter(log => log.status_code >= 400);
+    
+    if (errors.length === 0) {
+      setErrorSummary({
+        total: 0,
+        grouped: [],
+        recommendations: ['No errors found! Your activity is running smoothly.']
+      });
+      return;
     }
-    return 'bg-gray-100 text-gray-800';
+    
+    const grouped = {};
+    
+    errors.forEach(log => {
+      const key = log.error_message || 'Unknown error';
+      if (!grouped[key]) {
+        grouped[key] = { count: 0, endpoint: log.endpoint, status: log.status_code };
+      }
+      grouped[key].count++;
+    });
+
+    const summary = Object.entries(grouped)
+      .map(([error, data]) => ({ error, ...data }))
+      .sort((a, b) => b.count - a.count);
+
+    setErrorSummary({
+      total: errors.length,
+      grouped: summary,
+      recommendations: [
+        'Check balance before investing',
+        'Verify authentication tokens',
+        'Review error messages for clarity'
+      ]
+    });
   };
 
-  // Get method color
-  const getMethodColor = (method) => {
-    const colors = {
-      GET: 'bg-blue-100 text-blue-800',
-      POST: 'bg-green-100 text-green-800',
-      PUT: 'bg-yellow-100 text-yellow-800',
-      DELETE: 'bg-red-100 text-red-800',
-    };
-    return colors[method] || 'bg-gray-100 text-gray-800';
+  const getStatusColor = (code) => {
+    if (code >= 200 && code < 300) return 'text-green-600 bg-green-50';
+    if (code >= 400 && code < 500) return 'text-yellow-600 bg-yellow-50';
+    return 'text-red-600 bg-red-50';
   };
 
-  // Show loading spinner
+  const getStatusIcon = (code) => {
+    if (code >= 200 && code < 300) return '✅';
+    return '❌';
+  };
+
+  const filteredLogs = logs.filter(log => {
+    if (filters.status === 'success' && (log.status_code < 200 || log.status_code >= 300)) return false;
+    if (filters.status === 'error' && log.status_code < 400) return false;
+    if (filters.method !== 'all' && log.http_method !== filters.method) return false;
+    return true;
+  });
+
   if (loading) {
-    return (
-      <Layout>
-        <div className="flex justify-center items-center h-64">
-          <div className="spinner"></div>
-        </div>
-      </Layout>
-    );
+    return <Layout><div className="text-center py-20">Loading...</div></Layout>;
   }
-
-  // Current logs to display
-  const currentLogs = activeTab === 'all' ? logs : errorLogs;
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Page header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Transaction Logs</h1>
-          <p className="text-gray-600 mt-1">View your API activity and errors</p>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-
-        {/* Stats cards */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="card bg-blue-50">
-            <p className="text-sm text-gray-600 mb-1">Total Requests</p>
-            <p className="text-2xl font-bold text-gray-900">{logs.length}</p>
-          </div>
-          <div className="card bg-green-50">
-            <p className="text-sm text-gray-600 mb-1">Successful</p>
-            <p className="text-2xl font-bold text-green-600">
-              {logs.filter((log) => log.status_code >= 200 && log.status_code < 300).length}
-            </p>
-          </div>
-          <div className="card bg-red-50">
-            <p className="text-sm text-gray-600 mb-1">Errors</p>
-            <p className="text-2xl font-bold text-red-600">{errorLogs.length}</p>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Transaction Logs</h1>
+            <p className="text-gray-600">Your complete activity history</p>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="card">
-          <div className="flex border-b mb-4">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`px-4 py-2 font-medium ${
-                activeTab === 'all'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              All Logs ({logs.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('errors')}
-              className={`px-4 py-2 font-medium ${
-                activeTab === 'errors'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Errors Only ({errorLogs.length})
-            </button>
+        {/* Filters */}
+        <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+          <h3 className="font-bold mb-4">Filters</h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Status</label>
+              <select value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})} className="w-full border rounded-lg px-3 py-2">
+                <option value="all">All</option>
+                <option value="success">Success</option>
+                <option value="error">Errors</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Method</label>
+              <select value={filters.method} onChange={(e) => setFilters({...filters, method: e.target.value})} className="w-full border rounded-lg px-3 py-2">
+                <option value="all">All</option>
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Date Range</label>
+              <select value={filters.days} onChange={(e) => setFilters({...filters, days: e.target.value})} className="w-full border rounded-lg px-3 py-2">
+                <option value="1">Today</option>
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+              </select>
+            </div>
           </div>
-
-          {/* Logs table */}
-          {currentLogs.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No logs found</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Time</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Method</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Endpoint</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Error</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {currentLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {formatDate(log.created_at)}
-                        <br />
-                        <span className="text-xs text-gray-500">
-                          {new Date(log.created_at).toLocaleTimeString('en-IN')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getMethodColor(log.http_method)}`}>
-                          {log.http_method}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-mono text-gray-700">
-                        {log.endpoint}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(log.status_code)}`}>
-                          {log.status_code}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {log.error_message || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
 
         {/* AI Error Summary */}
-        {errorLogs.length > 0 && (
-          <div className="card bg-red-50">
-            <div className="flex items-start gap-3">
-              <div className="text-3xl">🤖</div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">AI Error Analysis</h3>
-                <p className="text-gray-700 mb-2">
-                  You have {errorLogs.length} error(s) in your recent activity.
-                </p>
-                <ul className="space-y-1 text-sm text-gray-700">
-                  <li>• Most common error: {errorLogs[0]?.error_message || 'N/A'}</li>
-                  <li>• Recommendation: Check your input data and authentication status</li>
-                  <li>• If errors persist, contact support</li>
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold">🤖 AI Error Analysis</h3>
+            <button onClick={generateAISummary} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+              Generate Summary
+            </button>
+          </div>
+          {errorSummary ? (
+            <div>
+              <p className="text-gray-700 mb-4">Analyzing {errorSummary.total} errors...</p>
+              <div className="bg-white rounded-lg p-4 mb-4">
+                <h4 className="font-bold mb-3">📊 Top Issues:</h4>
+                <div className="space-y-2">
+                  {errorSummary.grouped.slice(0, 5).map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center">
+                      <span className="text-gray-700">• {item.count}× {item.error}</span>
+                      <span className="text-sm text-gray-500">{item.endpoint}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-4">
+                <h4 className="font-bold mb-3">💡 Recommendations:</h4>
+                <ul className="space-y-1">
+                  {errorSummary.recommendations.map((rec, idx) => (
+                    <li key={idx} className="text-gray-700">• {rec}</li>
+                  ))}
                 </ul>
               </div>
             </div>
+          ) : (
+            <p className="text-gray-600">Click "Generate Summary" to analyze error patterns</p>
+          )}
+        </div>
+
+        {/* Logs Table */}
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left py-4 px-6 font-semibold">Time</th>
+                  <th className="text-left py-4 px-6 font-semibold">Endpoint</th>
+                  <th className="text-left py-4 px-6 font-semibold">Method</th>
+                  <th className="text-left py-4 px-6 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLogs.map((log, idx) => (
+                  <>
+                    <tr key={idx} onClick={() => setExpandedRow(expandedRow === idx ? null : idx)} className="border-b hover:bg-gray-50 cursor-pointer">
+                      <td className="py-4 px-6">{new Date(log.created_at).toLocaleString()}</td>
+                      <td className="py-4 px-6 font-mono text-sm">{log.endpoint}</td>
+                      <td className="py-4 px-6">
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-semibold">{log.http_method}</span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`px-3 py-1 rounded font-semibold ${getStatusColor(log.status_code)}`}>
+                          {getStatusIcon(log.status_code)} {log.status_code}
+                        </span>
+                      </td>
+                    </tr>
+                    {expandedRow === idx && log.error_message && (
+                      <tr className="bg-red-50">
+                        <td colSpan="4" className="py-3 px-6">
+                          <div className="flex items-start gap-2">
+                            <span className="text-red-600 font-semibold">Error:</span>
+                            <span className="text-red-700">{log.error_message}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+          {filteredLogs.length === 0 && (
+            <div className="text-center py-12 text-gray-500">No logs found</div>
+          )}
+          <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
+            <span className="text-gray-600">Showing {filteredLogs.length} of {logs.length} logs</span>
+          </div>
+        </div>
       </div>
     </Layout>
   );

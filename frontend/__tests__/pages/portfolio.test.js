@@ -17,9 +17,11 @@ jest.mock('../../utils/api');
 // Mock auth utils
 jest.mock('../../utils/auth', () => ({
   isAuthenticated: jest.fn(() => true),
+  getUser: jest.fn(() => ({ id: 1, email: 'test@example.com' })),
   formatCurrency: jest.fn((amount) => `₹${amount}`),
   formatDate: jest.fn((date) => '01 Jan 2025'),
   getRiskColor: jest.fn(() => 'text-green-600'),
+  logout: jest.fn(),
 }));
 
 // Mock Recharts
@@ -64,9 +66,11 @@ describe('Portfolio Page', () => {
     });
   });
 
-  it('renders portfolio page', () => {
+  it('renders portfolio page', async () => {
     render(<Portfolio />);
-    expect(screen.getByText(/My Portfolio/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/My Portfolio/i)).toBeInTheDocument();
+    });
   });
 
   it('displays investments', async () => {
@@ -86,6 +90,24 @@ describe('Portfolio Page', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/haven't made any investments/i)).toBeInTheDocument();
+    });
+  });
+
+  it('handles API error', async () => {
+    investmentsAPI.getPortfolio.mockRejectedValue(new Error('Failed'));
+    investmentsAPI.getSummary.mockRejectedValue(new Error('Failed'));
+
+    render(<Portfolio />);
+    await waitFor(() => {
+      const elements = screen.queryAllByText(/My Portfolio/i);
+      expect(elements.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('displays portfolio summary', async () => {
+    render(<Portfolio />);
+    await waitFor(() => {
+      expect(screen.getByText(/Test Bond/i)).toBeInTheDocument();
     });
   });
 });

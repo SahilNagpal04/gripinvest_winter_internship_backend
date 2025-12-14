@@ -264,7 +264,20 @@ export default function Profile() {
                   })}
                 </p>
               </div>
+              <div className="pt-4 border-t">
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    router.push('/');
+                  }}
+                  className="btn btn-danger w-full"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
+
           )}
         </div>
 

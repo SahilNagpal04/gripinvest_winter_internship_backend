@@ -17,7 +17,9 @@ jest.mock('../../utils/api');
 // Mock auth utils
 jest.mock('../../utils/auth', () => ({
   isAuthenticated: jest.fn(() => true),
+  getUser: jest.fn(() => ({ id: 1, email: 'test@example.com' })),
   formatDate: jest.fn((date) => '01 Jan 2025'),
+  logout: jest.fn(),
 }));
 
 describe('Logs Page', () => {
@@ -53,9 +55,11 @@ describe('Logs Page', () => {
     });
   });
 
-  it('renders logs page', () => {
+  it('renders logs page', async () => {
     render(<Logs />);
-    expect(screen.getByText(/Transaction Logs/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Transaction Logs/i)).toBeInTheDocument();
+    });
   });
 
   it('displays logs', async () => {
@@ -72,7 +76,8 @@ describe('Logs Page', () => {
     await waitFor(() => {
       const errorsTab = screen.getByText(/Errors Only/i);
       fireEvent.click(errorsTab);
-      expect(screen.getByText(/Insufficient balance/i)).toBeInTheDocument();
+      const balanceTexts = screen.getAllByText(/Insufficient balance/i);
+      expect(balanceTexts.length).toBeGreaterThan(0);
     });
   });
 
@@ -82,7 +87,8 @@ describe('Logs Page', () => {
     await waitFor(() => {
       expect(screen.getByText(/Total Requests/i)).toBeInTheDocument();
       expect(screen.getByText(/Successful/i)).toBeInTheDocument();
-      expect(screen.getByText(/Errors/i)).toBeInTheDocument();
+      const errorTexts = screen.getAllByText(/Errors/i);
+      expect(errorTexts.length).toBeGreaterThan(0);
     });
   });
 });

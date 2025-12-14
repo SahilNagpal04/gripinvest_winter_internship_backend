@@ -20,6 +20,7 @@ jest.mock('../../utils/auth', () => ({
   getUser: jest.fn(() => ({ id: 1, email: 'test@example.com' })),
   saveAuth: jest.fn(),
   formatCurrency: jest.fn((amount) => `₹${amount}`),
+  logout: jest.fn(),
 }));
 
 describe('Profile Page', () => {
@@ -46,6 +47,24 @@ describe('Profile Page', () => {
   it('displays user information', async () => {
     render(<Profile />);
 
+    await waitFor(() => {
+      expect(screen.getByText(/john@example.com/i)).toBeInTheDocument();
+    });
+  });
+
+  it('handles API error', async () => {
+    authAPI.getProfile.mockRejectedValue(new Error('Failed'));
+    productsAPI.getRecommended.mockRejectedValue(new Error('Failed'));
+
+    render(<Profile />);
+    await waitFor(() => {
+      const elements = screen.queryAllByText(/Profile/i);
+      expect(elements.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('displays balance', async () => {
+    render(<Profile />);
     await waitFor(() => {
       expect(screen.getByText(/john@example.com/i)).toBeInTheDocument();
     });

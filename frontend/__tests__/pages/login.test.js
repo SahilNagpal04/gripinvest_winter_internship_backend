@@ -14,6 +14,14 @@ jest.mock('next/router', () => ({
 // Mock API
 jest.mock('../../utils/api');
 
+// Mock auth utils
+jest.mock('../../utils/auth', () => ({
+  isAuthenticated: jest.fn(() => false),
+  getUser: jest.fn(() => null),
+  logout: jest.fn(),
+  saveAuth: jest.fn(),
+}));
+
 describe('Login Page', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -50,8 +58,10 @@ describe('Login Page', () => {
       target: { value: 'password123' },
     });
     
-    const submitButton = screen.getByRole('button', { name: /login/i });
-    fireEvent.click(submitButton);
+    const form = screen.getByPlaceholderText(/your@email.com/i).closest('form');
+    if (form) {
+      fireEvent.submit(form);
+    }
 
     await waitFor(() => {
       expect(authAPI.login).toHaveBeenCalled();

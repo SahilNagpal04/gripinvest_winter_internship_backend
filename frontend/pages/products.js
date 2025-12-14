@@ -19,14 +19,20 @@ export default function Products() {
     risk_level: '',
     search: '',
   });
+  // Sort state
+  const [sortBy, setSortBy] = useState('');
 
   // Load products on mount
   useEffect(() => {
+    // Check for risk filter from URL
+    if (router.query.risk) {
+      setFilters(prev => ({ ...prev, risk_level: router.query.risk }));
+    }
     loadProducts();
     if (isAuthenticated()) {
       loadRecommended();
     }
-  }, []);
+  }, [router.query.risk]);
 
   // Fetch all products
   const loadProducts = async () => {
@@ -73,13 +79,30 @@ export default function Products() {
     loadProducts();
   };
 
-  // Filter products based on search
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(filters.search.toLowerCase());
-    const matchesType = !filters.investment_type || product.investment_type === filters.investment_type;
-    const matchesRisk = !filters.risk_level || product.risk_level === filters.risk_level;
-    return matchesSearch && matchesType && matchesRisk;
-  });
+  // Filter and sort products
+  const filteredProducts = products
+    .filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(filters.search.toLowerCase());
+      const matchesType = !filters.investment_type || product.investment_type === filters.investment_type;
+      const matchesRisk = !filters.risk_level || product.risk_level === filters.risk_level;
+      return matchesSearch && matchesType && matchesRisk;
+    })
+    .sort((a, b) => {
+      if (!sortBy) return 0;
+      if (sortBy === 'yield_high') return b.annual_yield - a.annual_yield;
+      if (sortBy === 'yield_low') return a.annual_yield - b.annual_yield;
+      if (sortBy === 'tenure_short') return a.tenure_months - b.tenure_months;
+      if (sortBy === 'tenure_long') return b.tenure_months - a.tenure_months;
+      if (sortBy === 'risk_low') {
+        const riskOrder = { low: 1, moderate: 2, high: 3 };
+        return riskOrder[a.risk_level] - riskOrder[b.risk_level];
+      }
+      if (sortBy === 'risk_high') {
+        const riskOrder = { low: 1, moderate: 2, high: 3 };
+        return riskOrder[b.risk_level] - riskOrder[a.risk_level];
+      }
+      return 0;
+    });
 
   return (
     <Layout>
@@ -119,10 +142,10 @@ export default function Products() {
           </div>
         )}
 
-        {/* Filters */}
+        {/* Filters & Sort */}
         <div className="card">
-          <h3 className="font-bold text-gray-900 mb-4">Filters</h3>
-          <div className="grid md:grid-cols-4 gap-4">
+          <h3 className="font-bold text-gray-900 mb-4">Filters & Sort</h3>
+          <div className="grid md:grid-cols-5 gap-4">
             {/* Search */}
             <input
               type="text"
@@ -160,12 +183,27 @@ export default function Products() {
               <option value="high">High Risk</option>
             </select>
 
+            {/* Sort By */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="input"
+            >
+              <option value="">Sort By</option>
+              <option value="yield_high">Yield: High to Low</option>
+              <option value="yield_low">Yield: Low to High</option>
+              <option value="tenure_short">Tenure: Short to Long</option>
+              <option value="tenure_long">Tenure: Long to Short</option>
+              <option value="risk_low">Risk: Low to High</option>
+              <option value="risk_high">Risk: High to Low</option>
+            </select>
+
             {/* Reset Button */}
             <button
-              onClick={resetFilters}
+              onClick={() => { resetFilters(); setSortBy(''); }}
               className="btn bg-gray-200 text-gray-800 hover:bg-gray-300"
             >
-              Reset Filters
+              Reset All
             </button>
           </div>
         </div>

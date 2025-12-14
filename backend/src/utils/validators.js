@@ -25,10 +25,10 @@ const signupValidation = [
   body('first_name')
     .trim()
     .notEmpty().withMessage('First name is required')
-    .isLength({ min: 2, max: 100 }).withMessage('First name must be between 2-100 characters'),
+    .isLength({ min: 4, max: 100 }).withMessage('First name must be at least 4 characters'),
   
   body('last_name')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 100 }).withMessage('Last name must be less than 100 characters'),
   

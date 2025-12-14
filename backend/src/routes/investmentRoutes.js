@@ -8,6 +8,9 @@ const { createInvestmentValidation, validate } = require('../utils/validators');
 router.use(protect);
 
 router.post('/', createInvestmentValidation, validate, investmentController.createInvestment);
+router.get('/notifications', investmentController.getNotifications);
+router.put('/notifications/:id/read', investmentController.markNotificationRead);
+router.get('/portfolio/summary', investmentController.getPortfolio);
 router.get('/portfolio', investmentController.getPortfolio);
 router.get('/:id', investmentController.getInvestmentById);
 router.delete('/:id', investmentController.cancelInvestment);

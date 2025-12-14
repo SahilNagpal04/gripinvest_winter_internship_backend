@@ -6,6 +6,7 @@ Full-stack investment platform built for Grip Invest Winter Internship 2025. Fea
 
 ### Backend
 - ✅ JWT-based authentication (signup, login, password reset with OTP)
+- ✅ **Email 2FA** - Mandatory email verification on signup, optional 2FA for login
 - ✅ Investment products CRUD with AI-generated descriptions
 - ✅ User portfolio management with returns calculation
 - ✅ Transaction logging for all API calls
@@ -209,8 +210,13 @@ gripinvest_winter_internship_backend/
 ## 🔌 API Endpoints
 
 ### Authentication
-- `POST /api/auth/signup` - Register new user
-- `POST /api/auth/login` - User login
+- `POST /api/auth/signup` - Register new user (sends OTP)
+- `POST /api/auth/verify-signup` - Verify email with OTP
+- `POST /api/auth/login` - User login (sends OTP if 2FA enabled)
+- `POST /api/auth/verify-login` - Verify 2FA OTP
+- `POST /api/auth/resend-otp` - Resend OTP
+- `POST /api/auth/enable-2fa` - Enable 2FA for user
+- `POST /api/auth/disable-2fa` - Disable 2FA for user
 - `GET /api/auth/profile` - Get user profile
 - `PUT /api/auth/profile` - Update profile
 - `POST /api/auth/check-password` - Check password strength
@@ -411,10 +417,30 @@ docker-compose up -d --build frontend
 
 Import `GripInvest_API.postman_collection.json` from the backend directory to test all API endpoints.
 
+## 🔐 Email 2FA Setup
+
+For detailed 2FA setup instructions, see [QUICK-START-2FA.md](QUICK-START-2FA.md)
+
+**Quick Setup:**
+```bash
+cd backend
+setup-2fa.bat  # Run database migration
+npm install nodemailer  # Install email service
+npm run dev  # Restart server
+```
+
+**Features:**
+- ✅ Mandatory email verification on signup
+- ✅ Optional 2FA for login (user can enable/disable)
+- ✅ OTP-based password reset
+- ✅ Professional email templates
+- ✅ Console logging for development
+
 ## 🎯 Future Enhancements
 
 - Real-time notifications
-- Email integration for OTP
+- SMS-based 2FA
+- Authenticator app support (TOTP)
 - Advanced analytics dashboard
 - Export portfolio reports (PDF/Excel)
 - Multi-currency support

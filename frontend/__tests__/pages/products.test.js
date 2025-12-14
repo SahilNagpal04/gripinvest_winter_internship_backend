@@ -17,9 +17,11 @@ jest.mock('../../utils/api');
 // Mock auth utils
 jest.mock('../../utils/auth', () => ({
   isAuthenticated: jest.fn(() => false),
+  getUser: jest.fn(() => null),
   formatCurrency: jest.fn((amount) => `₹${amount}`),
   getRiskColor: jest.fn(() => 'text-green-600'),
   getInvestmentTypeLabel: jest.fn((type) => type),
+  logout: jest.fn(),
 }));
 
 describe('Products Page', () => {
@@ -78,5 +80,21 @@ describe('Products Page', () => {
     await waitFor(() => {
       expect(screen.getByText(/No products found/i)).toBeInTheDocument();
     });
+  });
+
+  it('handles API error', async () => {
+    productsAPI.getAll.mockRejectedValue(new Error('Failed to load'));
+
+    render(<Products />);
+    await waitFor(() => {
+      const elements = screen.queryAllByText(/Investment Products/i);
+      expect(elements.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('displays loading state initially', () => {
+    productsAPI.getAll.mockImplementation(() => new Promise(() => {}));
+    render(<Products />);
+    expect(screen.getByText(/Investment Products/i)).toBeInTheDocument();
   });
 });

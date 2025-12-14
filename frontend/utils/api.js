@@ -43,8 +43,14 @@ api.interceptors.response.use(
 export const authAPI = {
   // User signup
   signup: (data) => api.post('/auth/signup', data),
+  // Verify signup OTP
+  verifySignup: (data) => api.post('/auth/verify-signup', data),
   // User login
   login: (data) => api.post('/auth/login', data),
+  // Verify login 2FA OTP
+  verifyLogin: (data) => api.post('/auth/verify-login', data),
+  // Resend OTP
+  resendOTP: (data) => api.post('/auth/resend-otp', data),
   // Get user profile
   getProfile: () => api.get('/auth/profile'),
   // Update user profile

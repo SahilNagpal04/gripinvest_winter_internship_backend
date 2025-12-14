@@ -12,6 +12,13 @@ jest.mock('next/router', () => ({
   }),
 }));
 
+// Mock auth utils
+jest.mock('../../utils/auth', () => ({
+  isAuthenticated: jest.fn(() => false),
+  getUser: jest.fn(() => null),
+  logout: jest.fn(),
+}));
+
 describe('Home Page', () => {
   it('renders welcome heading', () => {
     render(<Home />);

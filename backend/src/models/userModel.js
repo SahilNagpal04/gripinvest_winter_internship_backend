@@ -39,7 +39,7 @@ const findUserByEmail = async (email) => {
  */
 const findUserById = async (userId) => {
   const users = await query(
-    'SELECT id, first_name, last_name, email, risk_appetite, balance, is_admin, created_at FROM users WHERE id = ?',
+    'SELECT id, first_name, last_name, email, risk_appetite, balance, is_admin, two_factor_enabled, two_factor_code, two_factor_expires, email_verified, created_at FROM users WHERE id = ?',
     [userId]
   );
   
@@ -133,6 +133,56 @@ const updatePassword = async (userId, newPasswordHash) => {
   );
 };
 
+/**
+ * Store 2FA OTP
+ */
+const store2FAOTP = async (userId, otp, expiryTime) => {
+  await query(
+    'UPDATE users SET two_factor_code = ?, two_factor_expires = ? WHERE id = ?',
+    [otp, expiryTime, userId]
+  );
+};
+
+/**
+ * Clear 2FA OTP
+ */
+const clear2FAOTP = async (userId) => {
+  await query(
+    'UPDATE users SET two_factor_code = NULL, two_factor_expires = NULL WHERE id = ?',
+    [userId]
+  );
+};
+
+/**
+ * Verify email
+ */
+const verifyEmail = async (userId) => {
+  await query(
+    'UPDATE users SET email_verified = TRUE, two_factor_code = NULL, two_factor_expires = NULL WHERE id = ?',
+    [userId]
+  );
+};
+
+/**
+ * Update 2FA status
+ */
+const update2FAStatus = async (userId, enabled) => {
+  await query(
+    'UPDATE users SET two_factor_enabled = ? WHERE id = ?',
+    [enabled, userId]
+  );
+};
+
+/**
+ * Delete user
+ */
+const deleteUser = async (userId) => {
+  await query(
+    'DELETE FROM users WHERE id = ?',
+    [userId]
+  );
+};
+
 module.exports = {
   createUser,
   findUserByEmail,
@@ -142,5 +192,10 @@ module.exports = {
   getUserBalance,
   storePasswordResetOTP,
   verifyOTP,
-  updatePassword
+  updatePassword,
+  store2FAOTP,
+  clear2FAOTP,
+  verifyEmail,
+  update2FAStatus,
+  deleteUser
 };

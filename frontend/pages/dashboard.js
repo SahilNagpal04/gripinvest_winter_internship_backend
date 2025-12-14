@@ -183,6 +183,23 @@ export default function Dashboard() {
             <p className="text-gray-600 text-sm mt-1">Manage your account</p>
           </button>
         </div>
+
+        {/* Investment Quiz Banner */}
+        <div className="card bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-purple-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">🎯 Know Your Investment Personality?</h3>
+              <p className="text-gray-700 mb-4">Take our quick quiz to discover your investment style and get personalized recommendations!</p>
+              <button
+                onClick={() => router.push('/quiz')}
+                className="btn btn-primary"
+              >
+                Take the Quiz →
+              </button>
+            </div>
+            <div className="text-6xl hidden md:block">🧠</div>
+          </div>
+        </div>
       </div>
     </Layout>
   );

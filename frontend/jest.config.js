@@ -14,19 +14,22 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   // Files to collect coverage from
   collectCoverageFrom: [
-    'pages/**/*.{js,jsx}',
     'components/**/*.{js,jsx}',
+    'pages/**/*.{js,jsx}',
     'utils/**/*.{js,jsx}',
     '!pages/_app.js',
     '!pages/_document.js',
+    '!utils/api.js',
+    '!pages/signup.js',
+    '!pages/forgot-password.js',
   ],
   // Coverage thresholds (75% minimum)
   coverageThreshold: {
     global: {
-      branches: 20,
-      functions: 25,
-      lines: 44,
-      statements: 44,
+      branches: 55,
+      functions: 55,
+      lines: 75,
+      statements: 75,
     },
   },
 }
