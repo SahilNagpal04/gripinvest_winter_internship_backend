@@ -27,16 +27,33 @@ export default function Home() {
 
   const loadDashboardData = async () => {
     try {
-      const [portfolioRes, productsRes, investmentsRes, logsRes] = await Promise.all([
-        api.get('/investments/portfolio/summary'),
-        api.get('/products/recommended/me'),
+      const [portfolioRes, productsRes] = await Promise.all([
         api.get('/investments/portfolio'),
-        api.get('/logs/me?limit=5')
+        api.get('/products/recommended/me')
       ]);
-      setPortfolio(portfolioRes.data.data);
-      setProducts(productsRes.data.data.recommendations || []);
-      setInvestments(investmentsRes.data.data.investments || []);
-      setTransactions(logsRes.data.data.logs || []);
+      const data = portfolioRes.data.data;
+      const totalInvested = parseFloat(data.summary?.total_invested || 0);
+      const totalExpectedReturn = parseFloat(data.summary?.total_expected_return || 0);
+      const totalGains = parseFloat(data.summary?.total_gains || 0);
+      const maturedProfit = parseFloat(data.summary?.total_returns || 0);
+      
+      setPortfolio({
+        totalValue: totalExpectedReturn,
+        total_returns: maturedProfit,
+        activeInvestments: data.investments?.filter(i => i.status === 'active').length,
+        growth: totalInvested > 0 ? `+${((totalGains / totalInvested) * 100).toFixed(1)}%` : '+0%'
+      });
+      setProducts(productsRes.data.data.products || []);
+      setInvestments(data.investments || []);
+      
+      // Try to load logs separately
+      try {
+        const logsRes = await api.get('/logs/me?limit=5');
+        setTransactions(logsRes.data.data.logs || []);
+      } catch (logErr) {
+        console.log('Logs not available');
+        setTransactions([]);
+      }
     } catch (err) {
       console.error('Failed to load data:', err);
     } finally {
@@ -73,11 +90,11 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-6 mb-8">
             <div className="bg-white p-6 rounded-xl shadow-md">
               <p className="text-gray-600 text-sm mb-2">Total Portfolio Value</p>
-              <h2 className="text-3xl font-bold text-gray-900">₹{portfolio?.totalValue?.toLocaleString() || '0'}</h2>
+              <h2 className="text-3xl font-bold text-gray-900">₹{parseFloat(portfolio?.totalValue || 0).toLocaleString('en-IN')}</h2>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-md">
               <p className="text-gray-600 text-sm mb-2">Total Returns (Matured)</p>
-              <h2 className="text-3xl font-bold text-green-600">+₹{portfolio?.total_returns?.toLocaleString() || '0'}</h2>
+              <h2 className="text-3xl font-bold text-green-600">+₹{parseFloat(portfolio?.total_returns || 0).toLocaleString('en-IN')}</h2>
               <p className="text-sm text-gray-500">Profit from matured investments</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-md">

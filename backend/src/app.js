@@ -11,6 +11,7 @@ const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const investmentRoutes = require('./routes/investmentRoutes');
 const logRoutes = require('./routes/logRoutes');
+const transactionRoutes = require('./routes/transactions');
 
 // Load environment variables
 dotenv.config();
@@ -52,7 +53,8 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       products: '/api/products',
       investments: '/api/investments',
-      logs: '/api/logs'
+      logs: '/api/logs',
+      transactions: '/api/transactions'
     }
   });
 });
@@ -62,6 +64,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {

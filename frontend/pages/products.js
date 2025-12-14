@@ -37,6 +37,11 @@ export default function Products() {
     if (showingRecommended) {
       if (isAuthenticated()) {
         loadRecommended();
+        // Set risk filter based on user's risk appetite
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.risk_appetite) {
+          setFilters(prev => ({ ...prev, risk_level: user.risk_appetite }));
+        }
         setLoading(false);
       }
     } else {

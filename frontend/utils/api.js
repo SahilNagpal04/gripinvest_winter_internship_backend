@@ -112,4 +112,11 @@ export const logsAPI = {
   getByEmail: (email) => api.get(`/logs/email/${email}`),
 };
 
+// Transactions API calls
+export const transactionsAPI = {
+  getTransactions: (params) => api.get('/transactions', { params }).then(res => res.data),
+  getById: (id) => api.get(`/transactions/${id}`).then(res => res.data),
+  getSummary: () => api.get('/transactions/summary').then(res => res.data),
+};
+
 export default api;

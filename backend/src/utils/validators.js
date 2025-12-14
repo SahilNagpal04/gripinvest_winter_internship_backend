@@ -1,11 +1,18 @@
 const { body, param, query, validationResult } = require('express-validator');
 
+console.log('[VALIDATORS] Validation utilities initialized');
+
 /**
  * Validate request and return errors if any
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware
  */
 const validate = (req, res, next) => {
+  console.log('[VALIDATORS] Validating request...');
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('[VALIDATORS] Validation failed:', errors.array().length, 'errors');
     return res.status(400).json({
       status: 'error',
       message: 'Validation failed',
@@ -15,6 +22,8 @@ const validate = (req, res, next) => {
       }))
     });
   }
+  
+  console.log('[VALIDATORS] Validation passed');
   next();
 };
 
@@ -25,7 +34,7 @@ const signupValidation = [
   body('first_name')
     .trim()
     .notEmpty().withMessage('First name is required')
-    .isLength({ min: 4, max: 100 }).withMessage('First name must be at least 4 characters'),
+    .isLength({ min: 2, max: 100 }).withMessage('First name must be at least 2 characters'),
   
   body('last_name')
     .optional({ checkFalsy: true })
@@ -43,7 +52,8 @@ const signupValidation = [
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
     .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
     .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
-    .matches(/[0-9]/).withMessage('Password must contain at least one number'),
+    .matches(/[0-9]/).withMessage('Password must contain at least one number')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/).withMessage('Password must contain at least one special character'),
   
   body('risk_appetite')
     .optional()
@@ -87,11 +97,15 @@ const resetPasswordValidation = [
   
   body('otp')
     .notEmpty().withMessage('OTP is required')
-    .isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
+    .matches(/^\d{6}$/).withMessage('OTP must be exactly 6 numeric digits'),
   
   body('newPassword')
     .notEmpty().withMessage('New password is required')
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
+    .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
+    .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
+    .matches(/[0-9]/).withMessage('Password must contain at least one number')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/).withMessage('Password must contain at least one special character')
 ];
 
 /**
@@ -133,7 +147,8 @@ const createProductValidation = [
  */
 const createInvestmentValidation = [
   body('product_id')
-    .notEmpty().withMessage('Product ID is required'),
+    .notEmpty().withMessage('Product ID is required')
+    .isString().withMessage('Product ID must be a valid identifier'),
   
   body('amount')
     .notEmpty().withMessage('Amount is required')

@@ -281,39 +281,7 @@ export default function Profile() {
           )}
         </div>
 
-        {/* AI Recommendations based on profile */}
-        {recommended.length > 0 && (
-          <div className="card bg-gradient-to-r from-purple-50 to-blue-50">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">🤖</span>
-              <h2 className="text-xl font-bold text-gray-900">
-                Recommended for Your Risk Profile
-              </h2>
-            </div>
-            <p className="text-gray-600 mb-4">
-              Based on your {user.risk_appetite} risk appetite, we recommend these products:
-            </p>
-            <div className="grid md:grid-cols-3 gap-4">
-              {recommended.slice(0, 3).map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => router.push(`/products/${product.id}`)}
-                >
-                  <h3 className="font-bold text-gray-900 mb-2">{product.name}</h3>
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-green-600">
-                      {product.annual_yield}%
-                    </span>
-                    <button className="text-primary text-sm font-medium">
-                      View →
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
       </div>
     </Layout>
   );

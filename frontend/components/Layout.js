@@ -87,7 +87,6 @@ export default function Layout({ children }) {
               {user ? (
                 <>
                   {/* Logged in user menu */}
-                  <button onClick={() => router.push('/')} className="text-gray-700 hover:text-primary px-3 py-2">Dashboard</button>
                   <button onClick={() => router.push('/products')} className="text-gray-700 hover:text-primary px-3 py-2">Products</button>
                   <button onClick={() => router.push('/portfolio')} className="text-gray-700 hover:text-primary px-3 py-2">Portfolio</button>
                   <button onClick={() => router.push('/history')} className="text-gray-700 hover:text-primary px-3 py-2">Investments</button>
@@ -173,7 +172,8 @@ export default function Layout({ children }) {
                         setProfileMenuTimeout(timeout);
                       }} className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
                         <button onClick={() => router.push('/profile')} className="block w-full text-left px-4 py-3 hover:bg-gray-100">My Profile</button>
-                        <button onClick={() => router.push('/logs')} className="block w-full text-left px-4 py-3 hover:bg-gray-100">Transaction Logs</button>
+                        <button onClick={() => router.push('/transactions')} className="block w-full text-left px-4 py-3 hover:bg-gray-100">Transaction Logs</button>
+                        {user?.is_admin && <button onClick={() => router.push('/logs')} className="block w-full text-left px-4 py-3 hover:bg-gray-100">Activity Logs</button>}
                         <button onClick={() => router.push('/profile')} className="block w-full text-left px-4 py-3 hover:bg-gray-100">Settings</button>
                         <button onClick={handleLogout} className="block w-full text-left px-4 py-3 hover:bg-gray-100 text-red-600">Logout</button>
                       </div>

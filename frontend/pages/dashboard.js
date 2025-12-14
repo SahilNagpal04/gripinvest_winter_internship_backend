@@ -28,11 +28,11 @@ export default function Dashboard() {
   // Fetch portfolio summary
   const loadDashboard = async () => {
     try {
-      const response = await investmentsAPI.getSummary();
+      const response = await investmentsAPI.getPortfolio();
       setSummary(response.data.data);
     } catch (err) {
       setError('Failed to load dashboard data');
-      console.error(err);
+      console.error('Dashboard error:', err);
     } finally {
       setLoading(false);
     }
@@ -71,35 +71,36 @@ export default function Dashboard() {
 
         {/* Stats cards */}
         <div className="grid md:grid-cols-4 gap-6">
-          {/* Total Invested */}
+          {/* Total Portfolio Value */}
           <div className="card bg-blue-50 border-l-4 border-blue-500">
-            <p className="text-sm text-gray-600 mb-1">Total Invested</p>
+            <p className="text-sm text-gray-600 mb-1">Total Portfolio Value</p>
             <p className="text-2xl font-bold text-gray-900">
               {formatCurrency(summary?.summary?.total_invested || 0)}
             </p>
           </div>
 
-          {/* Current Value */}
+          {/* Total Returns (Matured) */}
           <div className="card bg-green-50 border-l-4 border-green-500">
-            <p className="text-sm text-gray-600 mb-1">Current Value</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {formatCurrency(summary?.summary?.current_value || 0)}
-            </p>
-          </div>
-
-          {/* Total Gains */}
-          <div className="card bg-purple-50 border-l-4 border-purple-500">
-            <p className="text-sm text-gray-600 mb-1">Total Gains</p>
+            <p className="text-sm text-gray-600 mb-1">Total Returns (Matured)</p>
             <p className="text-2xl font-bold text-green-600">
               +{formatCurrency(summary?.summary?.total_gains || 0)}
             </p>
+            <p className="text-xs text-gray-500 mt-1">Profit from matured investments</p>
           </div>
 
           {/* Active Investments */}
-          <div className="card bg-yellow-50 border-l-4 border-yellow-500">
+          <div className="card bg-purple-50 border-l-4 border-purple-500">
             <p className="text-sm text-gray-600 mb-1">Active Investments</p>
             <p className="text-2xl font-bold text-gray-900">
-              {summary?.summary?.total_investments || 0}
+              {summary?.investments?.filter(i => i.status === 'active').length || 0}
+            </p>
+          </div>
+
+          {/* Growth */}
+          <div className="card bg-yellow-50 border-l-4 border-yellow-500">
+            <p className="text-sm text-gray-600 mb-1">Growth</p>
+            <p className="text-2xl font-bold text-purple-600">
+              📈 +{summary?.summary?.total_invested > 0 ? ((parseFloat(summary.summary.total_gains) / parseFloat(summary.summary.total_invested)) * 100).toFixed(1) : '0'}%
             </p>
           </div>
         </div>
@@ -165,14 +166,7 @@ export default function Dashboard() {
             <p className="text-gray-600 text-sm mt-1">Explore investment options</p>
           </button>
 
-          <button
-            onClick={() => router.push('/portfolio')}
-            className="card hover:shadow-lg transition-shadow cursor-pointer text-center"
-          >
-            <div className="text-4xl mb-2">📊</div>
-            <h3 className="font-bold text-lg">View Portfolio</h3>
-            <p className="text-gray-600 text-sm mt-1">See all your investments</p>
-          </button>
+
 
           <button
             onClick={() => router.push('/profile')}

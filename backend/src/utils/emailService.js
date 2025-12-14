@@ -1,70 +1,47 @@
-// Email service for sending OTPs
+// Email service for OTP generation and console logging
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
-// Create transporter if email configured
-let transporter = null;
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE || 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-}
+console.log('[EMAIL_SERVICE] Email service initialized (console-only mode)');
 
 /**
  * Generate 6-digit OTP
+ * @returns {string} 6-digit OTP code
  */
 const generateOTP = () => {
-  return crypto.randomInt(100000, 999999).toString();
+  console.log('[EMAIL_SERVICE] Generating OTP...');
+  const otp = crypto.randomInt(100000, 999999).toString();
+  console.log('[EMAIL_SERVICE] OTP generated successfully');
+  return otp;
 };
 
 /**
- * Send OTP via email
+ * Send OTP via console (email functionality removed)
+ * @param {string} email - Recipient email
+ * @param {string} otp - OTP code
+ * @param {string} purpose - Purpose of OTP
+ * @returns {Promise<boolean>} Always returns true
  */
 const sendOTP = async (email, otp, purpose = 'verification') => {
-  // Log OTP to console
-  const otpMessage = `\n📧 ========== EMAIL OTP ==========\nTo: ${email}\nPurpose: ${purpose}\nOTP Code: ${otp}\nValid for: 10 minutes\n================================\n`;
-  console.error(otpMessage);
-  process.stdout.write(otpMessage);
-
-  // Send email if configured
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-        to: email,
-        subject: `GripInvest - Your OTP for ${purpose}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2563eb;">GripInvest - OTP Verification</h2>
-            <p>Your OTP for ${purpose} is:</p>
-            <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-              <span style="font-size: 32px; font-weight: bold; color: #1f2937; letter-spacing: 5px;">${otp}</span>
-            </div>
-            <p style="color: #6b7280;">This OTP is valid for 10 minutes.</p>
-            <p style="color: #6b7280;">If you didn't request this, please ignore this email.</p>
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-            <p style="color: #9ca3af; font-size: 12px;">© 2025 GripInvest. All rights reserved.</p>
-          </div>
-        `
-      });
-      console.error('✅ Email sent successfully\n');
-    } catch (error) {
-      console.error('❌ Failed to send email:', error.message);
-    }
-  }
-
+  console.log('[EMAIL_SERVICE] Sending OTP to console...');
+  
+  const otpMessage = `\n📧 ========== OTP CODE ==========\nTo: ${email}\nPurpose: ${purpose}\nOTP Code: ${otp}\nValid for: 10 minutes\n================================\n`;
+  console.log(otpMessage);
+  
+  console.log('[EMAIL_SERVICE] OTP logged to console successfully');
   return true;
 };
 
 /**
  * Verify OTP
+ * @param {string} storedOTP - Stored OTP from database
+ * @param {Date} storedExpiry - OTP expiry timestamp
+ * @param {string} providedOTP - OTP provided by user
+ * @returns {Object} Verification result with valid flag and message
  */
 const verifyOTP = (storedOTP, storedExpiry, providedOTP) => {
+  console.log('[EMAIL_SERVICE] Verifying OTP...');
   if (!storedOTP || !storedExpiry) {
+    console.log('[EMAIL_SERVICE] OTP verification failed: No OTP found');
     return { valid: false, message: 'No OTP found. Please request a new one.' };
   }
 
@@ -72,13 +49,16 @@ const verifyOTP = (storedOTP, storedExpiry, providedOTP) => {
   const expiry = new Date(storedExpiry);
   
   if (now > expiry) {
+    console.log('[EMAIL_SERVICE] OTP verification failed: Expired');
     return { valid: false, message: 'OTP has expired. Please request a new one.' };
   }
 
   if (storedOTP.toString() !== providedOTP.toString()) {
+    console.log('[EMAIL_SERVICE] OTP verification failed: Invalid code');
     return { valid: false, message: 'Invalid OTP. Please try again.' };
   }
 
+  console.log('[EMAIL_SERVICE] OTP verified successfully');
   return { valid: true, message: 'OTP verified successfully' };
 };
 

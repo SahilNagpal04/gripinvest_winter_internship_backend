@@ -1,24 +1,69 @@
 const bcrypt = require('bcryptjs');
 
+console.log('[PASSWORD_UTILS] Password utilities initialized');
+
 /**
  * Hash a plain text password
+ * @param {string} password - Plain text password
+ * @returns {Promise<string>} Hashed password
  */
 const hashPassword = async (password) => {
-  const salt = await bcrypt.genSalt(10);
-  return await bcrypt.hash(password, salt);
+  console.log('[PASSWORD_UTILS] Hashing password...');
+  
+  if (!password || typeof password !== 'string') {
+    console.error('[PASSWORD_UTILS] Invalid password provided');
+    throw new Error('Password must be a non-empty string');
+  }
+  
+  const salt = await bcrypt.genSalt(12);
+  const hash = await bcrypt.hash(password, salt);
+  
+  console.log('[PASSWORD_UTILS] Password hashed successfully');
+  return hash;
 };
 
 /**
  * Compare plain text password with hashed password
+ * @param {string} plainPassword - Plain text password
+ * @param {string} hashedPassword - Hashed password
+ * @returns {Promise<boolean>} Match result
  */
 const comparePassword = async (plainPassword, hashedPassword) => {
-  return await bcrypt.compare(plainPassword, hashedPassword);
+  console.log('[PASSWORD_UTILS] Comparing password...');
+  
+  if (!plainPassword || typeof plainPassword !== 'string') {
+    console.error('[PASSWORD_UTILS] Invalid plain password');
+    throw new Error('Plain password must be a non-empty string');
+  }
+  if (!hashedPassword || typeof hashedPassword !== 'string') {
+    console.error('[PASSWORD_UTILS] Invalid hashed password');
+    throw new Error('Hashed password must be a non-empty string');
+  }
+  
+  const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
+  
+  console.log('[PASSWORD_UTILS] Password comparison completed');
+  return isMatch;
 };
 
 /**
  * Check password strength and give AI suggestions
+ * @param {string} password - Password to check
+ * @returns {Object} Password strength analysis
  */
 const checkPasswordStrength = (password) => {
+  console.log('[PASSWORD_UTILS] Checking password strength...');
+  
+  if (!password || typeof password !== 'string') {
+    console.log('[PASSWORD_UTILS] Invalid password for strength check');
+    return {
+      score: 0,
+      level: 'weak',
+      feedback: ['Password is required'],
+      isStrong: false
+    };
+  }
+  
   const strength = {
     score: 0,
     feedback: [],
@@ -71,6 +116,7 @@ const checkPasswordStrength = (password) => {
     strength.level = 'weak';
   }
 
+  console.log('[PASSWORD_UTILS] Password strength check completed:', strength.level);
   return strength;
 };
 
