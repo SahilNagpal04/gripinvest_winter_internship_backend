@@ -15,6 +15,10 @@ RUN npm install
 # Copy all frontend files
 COPY . .
 
+# Accept API URL as build argument
+ARG NEXT_PUBLIC_API_URL=http://localhost:5000/api
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Build the Next.js application
 RUN npm run build
 
