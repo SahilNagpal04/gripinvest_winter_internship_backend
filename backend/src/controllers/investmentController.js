@@ -179,17 +179,17 @@ const cancelInvestment = async (req, res, next) => {
 			await connection.beginTransaction();
 
 			await investmentModel.cancelInvestment(id);
-			await userModel.updateUserBalance(userId, investment.amount);
+			await userModel.updateUserBalance(investment.user_id, investment.amount);
 
 			const product = await productModel.getProductById(investment.product_id);
 			await connection.query(
 				'INSERT INTO financial_transactions (user_id, investment_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?)',
-				[userId, id, 'cancellation', investment.amount, `Cancelled investment in ${product.name}`]
+				[investment.user_id, id, 'cancellation', investment.amount, `Cancelled investment in ${product.name}`]
 			);
 
 			await connection.commit();
 
-			console.log(`[CANCEL_INVESTMENT] Investment cancelled successfully: ${id}`);
+			console.log(`[CANCEL_INVESTMENT] Investment cancelled successfully: ${id}, Amount refunded: ₹${investment.amount}`);
 
 			res.status(200).json({
 				status: 'success',

@@ -113,11 +113,10 @@ export default function Portfolio() {
 
   // Calculate metrics from portfolio list
   const activeInvestments = portfolio.filter(p => p.status === 'active');
-  const allInvestments = portfolio;
   
   const totalInvested = activeInvestments.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
   const currentValue = activeInvestments.reduce((sum, inv) => sum + parseFloat(inv.expected_return || 0), 0);
-  const totalReturns = allInvestments.reduce((sum, inv) => sum + (parseFloat(inv.expected_return || 0) - parseFloat(inv.amount || 0)), 0);
+  const totalReturns = activeInvestments.reduce((sum, inv) => sum + (parseFloat(inv.expected_return || 0) - parseFloat(inv.amount || 0)), 0);
   const returnPercentage = totalInvested > 0 ? ((totalReturns / totalInvested) * 100).toFixed(1) : 0;
   const activeCount = activeInvestments.length;
   const maturedCount = portfolio.filter(p => p.status === 'matured').length;

@@ -215,35 +215,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Recent Transactions */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-            <h3 className="text-2xl font-bold mb-4 dark:text-gray-100">Recent Transactions</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b dark:border-gray-700">
-                    <th className="text-left py-3 dark:text-gray-100">Action</th>
-                    <th className="text-left py-3 dark:text-gray-100">Endpoint</th>
-                    <th className="text-left py-3 dark:text-gray-100">Status</th>
-                    <th className="text-left py-3 dark:text-gray-100">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.slice(0, 5).map((txn, idx) => (
-                    <tr key={idx} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="py-3 dark:text-gray-100">{txn.method}</td>
-                      <td className="py-3 text-sm text-gray-600 dark:text-gray-400">{txn.endpoint}</td>
-                      <td className="py-3">
-                        <span className={`px-2 py-1 rounded text-xs ${txn.status_code < 400 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{txn.status_code}</span>
-                      </td>
-                      <td className="py-3 text-sm text-gray-600 dark:text-gray-400">{new Date(txn.timestamp).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  {transactions.length === 0 && <tr><td colSpan="4" className="text-center py-4 text-gray-500 dark:text-gray-400">No recent activity</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          </div>
+
         </>
       ) : (
         // NON-LOGGED IN LANDING PAGE

@@ -140,7 +140,7 @@ export default function Transactions() {
                 let runningBalance = 1000000;
                 
                 const transactionsWithBalance = sortedTransactions.map((txn) => {
-                  const isCredit = ['investment_matured', 'investment_cancelled', 'deposit', 'interest_credited', 'refund'].includes(txn.transaction_type);
+                  const isCredit = ['investment_matured', 'investment_cancelled', 'cancellation', 'deposit', 'interest_credited', 'refund'].includes(txn.transaction_type);
                   const amount = parseFloat(txn.amount);
                   
                   if (isCredit) {
