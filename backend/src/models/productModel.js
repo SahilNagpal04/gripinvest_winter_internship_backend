@@ -1,31 +1,6 @@
 const { query } = require('../config/database');
 
 /**
- * Create new investment product (Admin only)
- */
-const createProduct = async (productData) => {
-  const {
-    name,
-    investment_type,
-    tenure_months,
-    annual_yield,
-    risk_level,
-    min_investment,
-    max_investment,
-    description
-  } = productData;
-
-  const result = await query(
-    `INSERT INTO investment_products 
-     (name, investment_type, tenure_months, annual_yield, risk_level, min_investment, max_investment, description) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [name, investment_type, tenure_months, annual_yield, risk_level, min_investment, max_investment, description]
-  );
-
-  return result.insertId;
-};
-
-/**
  * Get all products with optional filters
  */
 const getAllProducts = async (filters = {}) => {
@@ -65,44 +40,6 @@ const getProductById = async (productId) => {
 };
 
 /**
- * Update product (Admin only)
- */
-const updateProduct = async (productId, updateData) => {
-  const fields = [];
-  const values = [];
-
-  Object.keys(updateData).forEach(key => {
-    if (updateData[key] !== undefined) {
-      fields.push(`${key} = ?`);
-      values.push(updateData[key]);
-    }
-  });
-
-  if (fields.length === 0) return null;
-
-  values.push(productId);
-
-  await query(
-    `UPDATE investment_products SET ${fields.join(', ')} WHERE id = ?`,
-    values
-  );
-
-  return await getProductById(productId);
-};
-
-/**
- * Delete product (Admin only) - Soft delete
- */
-const deleteProduct = async (productId) => {
-  await query(
-    'UPDATE investment_products SET is_active = FALSE WHERE id = ?',
-    [productId]
-  );
-
-  return true;
-};
-
-/**
  * Get products recommended for user based on risk appetite
  */
 const getRecommendedProducts = async (riskAppetite) => {
@@ -124,11 +61,8 @@ const getTopProducts = async (limit = 5) => {
 };
 
 module.exports = {
-  createProduct,
   getAllProducts,
   getProductById,
-  updateProduct,
-  deleteProduct,
   getRecommendedProducts,
   getTopProducts
 };

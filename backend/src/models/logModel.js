@@ -4,12 +4,13 @@ const db = require('../config/database');
  * Get logs by user ID
  */
 const getLogsByUserId = async (userId, limit = 100) => {
+  const safeLimit = parseInt(limit) || 100;
   return await db.query(
     `SELECT * FROM transaction_logs 
      WHERE user_id = ? 
      ORDER BY created_at DESC 
-     LIMIT ?`,
-    [userId, parseInt(limit)]
+     LIMIT ${safeLimit}`,
+    [userId]
   );
 };
 
@@ -17,12 +18,13 @@ const getLogsByUserId = async (userId, limit = 100) => {
  * Get logs by email
  */
 const getLogsByEmail = async (email, limit = 100) => {
+  const safeLimit = parseInt(limit) || 100;
   return await db.query(
     `SELECT * FROM transaction_logs 
      WHERE email = ? 
      ORDER BY created_at DESC 
-     LIMIT ?`,
-    [email, parseInt(limit)]
+     LIMIT ${safeLimit}`,
+    [email]
   );
 };
 
@@ -30,11 +32,13 @@ const getLogsByEmail = async (email, limit = 100) => {
  * Get all logs (Admin only)
  */
 const getAllLogs = async (limit = 100, offset = 0) => {
+  const safeLimit = parseInt(limit) || 100;
+  const safeOffset = parseInt(offset) || 0;
   return await db.query(
     `SELECT * FROM transaction_logs 
      ORDER BY created_at DESC 
-     LIMIT ? OFFSET ?`,
-    [parseInt(limit), parseInt(offset)]
+     LIMIT ${safeLimit} OFFSET ${safeOffset}`,
+    []
   );
 };
 

@@ -396,44 +396,6 @@ const updateProfile = async (req, res, next) => {
 };
 
 /**
- * Enable 2FA for user
- */
-const enable2FA = async (req, res, next) => {
-  try {
-    console.log(`[ENABLE_2FA] Enabling 2FA for userId: ${req.user.id}`);
-    await userModel.update2FAStatus(req.user.id, true);
-    console.log(`[ENABLE_2FA] 2FA enabled successfully for userId: ${req.user.id}`);
-
-    res.status(200).json({
-      status: 'success',
-      message: '2FA enabled successfully'
-    });
-  } catch (error) {
-    console.error(`[ENABLE_2FA] Error: ${error.message}`);
-    next(error);
-  }
-};
-
-/**
- * Disable 2FA for user
- */
-const disable2FA = async (req, res, next) => {
-  try {
-    console.log(`[DISABLE_2FA] Disabling 2FA for userId: ${req.user.id}`);
-    await userModel.update2FAStatus(req.user.id, false);
-    console.log(`[DISABLE_2FA] 2FA disabled successfully for userId: ${req.user.id}`);
-
-    res.status(200).json({
-      status: 'success',
-      message: '2FA disabled successfully'
-    });
-  } catch (error) {
-    console.error(`[DISABLE_2FA] Error: ${error.message}`);
-    next(error);
-  }
-};
-
-/**
  * Resend OTP
  */
 const resendOTP = async (req, res, next) => {
@@ -482,7 +444,5 @@ module.exports = {
   resetPassword,
   getProfile,
   updateProfile,
-  enable2FA,
-  disable2FA,
   resendOTP
 };

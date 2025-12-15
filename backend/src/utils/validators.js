@@ -115,46 +115,6 @@ const resetPasswordValidation = [
 ];
 
 /**
- * Validation rules for creating product
- */
-const createProductValidation = [
-  body('name')
-    .trim()
-    .notEmpty().withMessage('Product name is required')
-    .isLength({ min: 3, max: 255 }).withMessage('Name must be between 3-255 characters'),
-  
-  body('investment_type')
-    .notEmpty().withMessage('Investment type is required')
-    .isIn(['bond', 'fd', 'mf', 'etf', 'other']).withMessage('Invalid investment type'),
-  
-  body('tenure_months')
-    .notEmpty().withMessage('Tenure is required')
-    .isInt({ min: 1 }).withMessage('Tenure must be at least 1 month'),
-  
-  body('annual_yield')
-    .notEmpty().withMessage('Annual yield is required')
-    .isFloat({ min: 0, max: 100 }).withMessage('Annual yield must be between 0-100'),
-  
-  body('risk_level')
-    .notEmpty().withMessage('Risk level is required')
-    .isIn(['low', 'moderate', 'high']).withMessage('Invalid risk level'),
-  
-  body('min_investment')
-    .optional()
-    .isFloat({ min: 0 }).withMessage('Minimum investment must be positive'),
-  
-  body('max_investment')
-    .optional()
-    .isFloat({ min: 0 }).withMessage('Maximum investment must be positive')
-    .custom((value, { req }) => {
-      if (value && req.body.min_investment && parseFloat(value) <= parseFloat(req.body.min_investment)) {
-        throw new Error('Maximum investment must be greater than minimum investment');
-      }
-      return true;
-    })
-];
-
-/**
  * Validation rules for creating investment
  */
 const createInvestmentValidation = [
@@ -174,6 +134,5 @@ module.exports = {
   loginValidation,
   resetPasswordRequestValidation,
   resetPasswordValidation,
-  createProductValidation,
   createInvestmentValidation
 };

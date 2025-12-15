@@ -11,9 +11,6 @@ router.get('/me', logController.getMyLogs);
 router.get('/me/errors', logController.getMyErrorLogs);
 router.get('/date-range', logController.getLogsByDateRange);
 
-// Admin only routes
-router.get('/', restrictTo('admin'), logController.getAllLogs);
-router.get('/user/:userId', restrictTo('admin'), logController.getLogsByUserId);
-router.get('/email/:email', restrictTo('admin'), logController.getLogsByEmail);
+
 
 module.exports = router;

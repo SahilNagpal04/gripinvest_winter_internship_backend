@@ -70,109 +70,6 @@ const getMyErrorLogs = async (req, res, next) => {
 };
 
 /**
- * Get all logs (Admin only)
- */
-const getAllLogs = async (req, res, next) => {
-	try {
-		const limitValidation = validateLimit(req.query.limit || 100);
-		if (!limitValidation.valid) {
-			return next(new AppError(limitValidation.error, 400));
-		}
-		const limit = limitValidation.value;
-		const offset = parseInt(req.query.offset) || 0;
-		console.log(`[GET_ALL_LOGS] Admin fetching logs, limit: ${limit}, offset: ${offset}`);
-
-		if (isNaN(offset) || offset < 0) {
-			return next(new AppError('Offset must be a non-negative number', 400));
-		}
-
-		const logs = await logModel.getAllLogs(limit, offset);
-
-		console.log(`[GET_ALL_LOGS] Retrieved ${logs.length} logs`);
-
-		res.status(200).json({
-			status: 'success',
-			results: logs.length,
-			data: {
-				logs
-			}
-		});
-	} catch (error) {
-		console.error(`[GET_ALL_LOGS] Error: ${error.message}`);
-		next(error);
-	}
-};
-
-/**
- * Get logs by user ID (Admin only)
- */
-const getLogsByUserId = async (req, res, next) => {
-	try {
-		const { userId } = req.params;
-		const limitValidation = validateLimit(req.query.limit || 100);
-		if (!limitValidation.valid) {
-			return next(new AppError(limitValidation.error, 400));
-		}
-		const limit = limitValidation.value;
-		console.log(`[GET_LOGS_BY_USER_ID] Admin fetching logs for userId: ${userId}`);
-
-		if (!userId || isNaN(parseInt(userId))) {
-			return next(new AppError('Valid user ID is required', 400));
-		}
-
-		const logs = await logModel.getLogsByUserId(userId, limit);
-
-		console.log(`[GET_LOGS_BY_USER_ID] Retrieved ${logs.length} logs for userId: ${userId}`);
-
-		res.status(200).json({
-			status: 'success',
-			results: logs.length,
-			data: {
-				logs
-			}
-		});
-	} catch (error) {
-		console.error(`[GET_LOGS_BY_USER_ID] Error: ${error.message}`);
-		next(error);
-	}
-};
-
-/**
- * Get logs by email (Admin only)
- */
-const getLogsByEmail = async (req, res, next) => {
-	try {
-		const { email } = req.params;
-		const limitValidation = validateLimit(req.query.limit || 100);
-		if (!limitValidation.valid) {
-			return next(new AppError(limitValidation.error, 400));
-		}
-		const limit = limitValidation.value;
-		console.log(`[GET_LOGS_BY_EMAIL] Admin fetching logs for email: ${email}`);
-
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (!email || !emailRegex.test(email)) {
-			return next(new AppError('Valid email is required', 400));
-		}
-
-		const logs = await logModel.getLogsByEmail(email, limit);
-
-		console.log(`[GET_LOGS_BY_EMAIL] Retrieved ${logs.length} logs for email: ${email}`);
-
-		res.status(200).json({
-			status: 'success',
-			results: logs.length,
-			data: {
-				logs
-			}
-		});
-	} catch (error) {
-		console.error(`[GET_LOGS_BY_EMAIL] Error: ${error.message}`);
-		next(error);
-	}
-};
-
-/**
  * Get logs by date range
  */
 const getLogsByDateRange = async (req, res, next) => {
@@ -247,8 +144,5 @@ const generateErrorInsights = (errorSummary) => {
 module.exports = {
 	getMyLogs,
 	getMyErrorLogs,
-	getAllLogs,
-	getLogsByUserId,
-	getLogsByEmail,
 	getLogsByDateRange
 };

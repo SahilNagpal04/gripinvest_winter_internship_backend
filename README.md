@@ -6,7 +6,6 @@ Full-stack investment platform built for Grip Invest Winter Internship 2025. Fea
 
 ### Backend
 - ✅ JWT-based authentication (signup, login, password reset with OTP)
-- ✅ **Email 2FA** - Mandatory email verification on signup, optional 2FA for login
 - ✅ Investment products CRUD with AI-generated descriptions
 - ✅ User portfolio management with returns calculation
 - ✅ Transaction logging for all API calls
@@ -70,23 +69,51 @@ cd gripinvest_winter_internship_backend
 ### 2. Start all services with Docker Compose
 ```bash
 cd backend
-docker-compose up -d
+docker-compose up -d --build
 ```
 
-This will start:
-- MySQL database on port 3306
-- Backend API on port 5000
-- Frontend app on port 3000
+**What happens automatically:**
+- MySQL database starts on port 3306
+- Database schema created from `init.sql`
+- Sample data seeded from `seed.sql`
+- Backend API starts on port 5000
+- Frontend app starts on port 3000
 
-### 3. Access the application
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- Health Check: http://localhost:5000/health
+### 3. Verify containers are running
+```bash
+# Check all containers status
+docker-compose ps
 
-### 4. Default Admin Credentials
+# View startup logs
+docker-compose logs -f
+```
+
+### 4. Access the application
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **Health Check**: http://localhost:5000/health
+- **Database**: localhost:3306 (root/rootpassword)
+
+### 5. Default Admin Credentials
 ```
 Email: admin@gripinvest.in
 Password: Admin@123
+```
+
+### 6. Database Seeding
+The database is automatically seeded with:
+- Admin user account
+- Sample investment products
+- User accounts for testing
+- Transaction history
+
+**Manual seeding (if needed):**
+```bash
+# Access MySQL container
+docker-compose exec mysql mysql -u root -p gripinvest_db
+
+# Run seed script
+source /docker-entrypoint-initdb.d/seed.sql
 ```
 
 ## 💻 Manual Setup (Without Docker)
@@ -215,8 +242,6 @@ gripinvest_winter_internship_backend/
 - `POST /api/auth/login` - User login (sends OTP if 2FA enabled)
 - `POST /api/auth/verify-login` - Verify 2FA OTP
 - `POST /api/auth/resend-otp` - Resend OTP
-- `POST /api/auth/enable-2fa` - Enable 2FA for user
-- `POST /api/auth/disable-2fa` - Disable 2FA for user
 - `GET /api/auth/profile` - Get user profile
 - `PUT /api/auth/profile` - Update profile
 - `POST /api/auth/check-password` - Check password strength
@@ -275,35 +300,65 @@ gripinvest_winter_internship_backend/
 
 ## 🐳 Docker Commands
 
-### Start all services
+### Container Management
 ```bash
+# Start all services (with build)
+docker-compose up -d --build
+
+# Start without build
 docker-compose up -d
-```
 
-### Stop all services
-```bash
+# Stop all services
 docker-compose down
+
+# Stop and remove volumes (clears database)
+docker-compose down -v
 ```
 
-### View logs
+### Monitoring & Debugging
 ```bash
-# All services
+# Check container status
+docker-compose ps
+
+# View all logs
 docker-compose logs -f
 
-# Specific service
+# View specific service logs
 docker-compose logs -f backend
 docker-compose logs -f frontend
 docker-compose logs -f mysql
+
+# Follow logs in real-time
+docker-compose logs -f --tail=100
 ```
 
-### Rebuild containers
+### Database Operations
 ```bash
-docker-compose up -d --build
+# Access MySQL shell
+docker-compose exec mysql mysql -u root -p gripinvest_db
+
+# Backup database
+docker-compose exec mysql mysqldump -u root -p gripinvest_db > backup.sql
+
+# Restore database
+docker-compose exec -T mysql mysql -u root -p gripinvest_db < backup.sql
+
+# Reset database (re-run init scripts)
+docker-compose down -v && docker-compose up -d
 ```
 
-### Remove all containers and volumes
+### Service Management
 ```bash
-docker-compose down -v
+# Restart specific service
+docker-compose restart backend
+docker-compose restart frontend
+docker-compose restart mysql
+
+# Rebuild specific service
+docker-compose up -d --build backend
+
+# Scale services (if needed)
+docker-compose up -d --scale backend=2
 ```
 
 ## 📊 Database Schema
@@ -436,25 +491,37 @@ npm run dev  # Restart server
 - ✅ Professional email templates
 - ✅ Console logging for development
 
-## 🎯 Future Enhancements
+## ✨ Extra Features Beyond Requirements
 
-- Real-time notifications
-- SMS-based 2FA
-- Authenticator app support (TOTP)
-- Advanced analytics dashboard
-- Export portfolio reports (PDF/Excel)
-- Multi-currency support
-- Mobile app (React Native)
-- Payment gateway integration
-- KYC verification
+### Enhanced Authentication
+- **Advanced Password Validation** - Real-time strength checking with AI suggestions
+- **Profile Management** - Update user details and risk appetite
 
-## 👥 Contributing
+### Advanced AI Features
+- **Portfolio Insights with AI** - Comprehensive investment advice and risk analysis
+- **Smart Product Recommendations** - Personalized suggestions throughout the app
+- **Error Summarization** - AI-powered analysis of error logs and patterns
+- **Investment Calculator** - Real-time returns calculation
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
+### Enhanced User Experience
+- **Dark Mode** - Toggle between light and dark themes
+- **Smart Alerts** - Real-time notifications for investments and portfolio changes
+- **Interactive Charts** - Advanced portfolio visualization with Recharts
+- **Search & Filters** - Advanced product filtering and search capabilities
+
+### DevOps & Performance
+- **Health Check Endpoints** - Comprehensive service and database monitoring
+- **Advanced Logging** - Detailed transaction logs with user activity tracking
+- **Database Seeding** - Automated sample data initialization
+
+### Security Enhancements
+- **Role-based Access Control** - Admin and user permissions
+- **SQL Injection Prevention** - Parameterized queries and validation
+- **XSS Protection** - Helmet.js security headers
+- **CORS Configuration** - Secure cross-origin requests
+- **Input Validation** - Comprehensive request validation
+
+
 
 ## 📄 License
 
@@ -464,7 +531,6 @@ This project is part of Grip Invest Winter Internship 2025.
 
 **Sahil Nagpal**
 - GitHub: [@SahilNagpal04](https://github.com/SahilNagpal04)
-- Email: sahilnagpal.tech@gmail.com
 
 
 ---
@@ -473,8 +539,5 @@ This project is part of Grip Invest Winter Internship 2025.
 - Code generation and boilerplate
 - Test case creation
 - Documentation writing
-- Bug detection and fixes
 - Best practices implementation
-- Performance optimization suggestions
 
-Built with ❤️ for Grip Invest Winter Internship 2025

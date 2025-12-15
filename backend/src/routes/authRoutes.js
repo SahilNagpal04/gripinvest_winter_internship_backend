@@ -23,7 +23,6 @@ router.post('/reset-password', resetPasswordValidation, validate, authController
 // Protected routes
 router.get('/profile', protect, authController.getProfile);
 router.put('/profile', protect, authController.updateProfile);
-router.post('/enable-2fa', protect, authController.enable2FA);
-router.post('/disable-2fa', protect, authController.disable2FA);
+
 
 module.exports = router;

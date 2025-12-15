@@ -51,54 +51,7 @@ describe('Product Endpoints', () => {
     });
   });
 
-  describe('POST /api/products (Admin)', () => {
-    it('should create product as admin', async () => {
-      const res = await request(app)
-        .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          name: 'Test Product',
-          investment_type: 'mf',
-          tenure_months: 12,
-          annual_yield: 10.5,
-          risk_level: 'moderate',
-          min_investment: 1000,
-          description: 'Test product description'
-        });
 
-      expect(res.statusCode).toBe(201);
-      expect(res.body.status).toBe('success');
-      expect(res.body.data.product).toHaveProperty('name');
-      productId = res.body.data.product.id;
-    });
-
-    it('should fail to create product as regular user', async () => {
-      const res = await request(app)
-        .post('/api/products')
-        .set('Authorization', `Bearer ${userToken}`)
-        .send({
-          name: 'Test Product 2',
-          investment_type: 'fd',
-          tenure_months: 12,
-          annual_yield: 7.5,
-          risk_level: 'low'
-        });
-
-      expect([401, 403]).toContain(res.statusCode);
-    });
-
-    it('should fail with invalid data', async () => {
-      const res = await request(app)
-        .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          name: 'T',
-          investment_type: 'invalid'
-        });
-
-      expect(res.statusCode).toBe(400);
-    });
-  });
 
   describe('GET /api/products/:id', () => {
     it('should get product by ID', async () => {
