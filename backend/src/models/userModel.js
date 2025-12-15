@@ -39,7 +39,7 @@ const findUserByEmail = async (email) => {
  */
 const findUserById = async (userId) => {
   const users = await query(
-    'SELECT id, first_name, last_name, email, risk_appetite, balance, is_admin, two_factor_enabled, otp as two_factor_code, otp_expiry as two_factor_expires, email_verified, created_at FROM users WHERE id = ?',
+    'SELECT id, first_name, last_name, email, risk_appetite, balance, is_admin, created_at FROM users WHERE id = ?',
     [userId]
   );
   
@@ -100,78 +100,7 @@ const getUserBalance = async (userId) => {
   return result.length > 0 ? result[0].balance : 0;
 };
 
-/**
- * Store OTP for password reset (we'll use a simple approach - store in a temp table or memory)
- * For simplicity, we'll add otp and otp_expiry columns to users table
- */
-const storePasswordResetOTP = async (email, otp, expiryTime) => {
-  await query(
-    'UPDATE users SET otp = ?, otp_expiry = ? WHERE email = ?',
-    [otp, expiryTime, email]
-  );
-};
 
-/**
- * Verify OTP
- */
-const verifyOTP = async (email, otp) => {
-  const users = await query(
-    'SELECT * FROM users WHERE email = ? AND otp = ? AND otp_expiry > NOW()',
-    [email, otp]
-  );
-  
-  return users.length > 0 ? users[0] : null;
-};
-
-/**
- * Update password
- */
-const updatePassword = async (userId, newPasswordHash) => {
-  await query(
-    'UPDATE users SET password_hash = ?, otp = NULL, otp_expiry = NULL WHERE id = ?',
-    [newPasswordHash, userId]
-  );
-};
-
-/**
- * Store 2FA OTP
- */
-const store2FAOTP = async (userId, otp, expiryTime) => {
-  await query(
-    'UPDATE users SET otp = ?, otp_expiry = ? WHERE id = ?',
-    [otp, expiryTime, userId]
-  );
-};
-
-/**
- * Clear 2FA OTP
- */
-const clear2FAOTP = async (userId) => {
-  await query(
-    'UPDATE users SET otp = NULL, otp_expiry = NULL WHERE id = ?',
-    [userId]
-  );
-};
-
-/**
- * Verify email
- */
-const verifyEmail = async (userId) => {
-  await query(
-    'UPDATE users SET email_verified = TRUE, otp = NULL, otp_expiry = NULL WHERE id = ?',
-    [userId]
-  );
-};
-
-/**
- * Update 2FA status
- */
-const update2FAStatus = async (userId, enabled) => {
-  await query(
-    'UPDATE users SET two_factor_enabled = ? WHERE id = ?',
-    [enabled, userId]
-  );
-};
 
 /**
  * Get last deletion time for email
@@ -208,13 +137,6 @@ module.exports = {
   updateUser,
   updateUserBalance,
   getUserBalance,
-  storePasswordResetOTP,
-  verifyOTP,
-  updatePassword,
-  store2FAOTP,
-  clear2FAOTP,
-  verifyEmail,
-  update2FAStatus,
   deleteUser,
   getLastDeletionTime
 };

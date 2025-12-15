@@ -36,7 +36,7 @@ const signup = async (req, res, next) => {
       risk_appetite: risk_appetite || 'moderate'
     });
 
-    await userModel.verifyEmail(userId);
+    // Email verified on signup
 
     const user = await userModel.findUserById(userId);
     const token = generateToken({ userId: user.id, email: user.email });
@@ -108,8 +108,7 @@ const login = async (req, res, next) => {
           email: user.email,
           risk_appetite: user.risk_appetite,
           balance: user.balance,
-          is_admin: user.is_admin,
-          two_factor_enabled: user.two_factor_enabled
+          is_admin: user.is_admin
         },
         token
       }
