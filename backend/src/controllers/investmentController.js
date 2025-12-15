@@ -57,7 +57,7 @@ const createInvestment = async (req, res, next) => {
 
 			await connection.query(
 				'INSERT INTO financial_transactions (user_id, investment_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?)',
-				[userId, investmentId, 'investment_created', investAmount, `Investment in ${product.name}`]
+				[userId, investmentId, 'investment', investAmount, `Investment in ${product.name}`]
 			);
 
 			await connection.commit();
@@ -184,7 +184,7 @@ const cancelInvestment = async (req, res, next) => {
 			const product = await productModel.getProductById(investment.product_id);
 			await connection.query(
 				'INSERT INTO financial_transactions (user_id, investment_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?)',
-				[userId, id, 'investment_cancelled', investment.amount, `Cancelled investment in ${product.name}`]
+				[userId, id, 'cancellation', investment.amount, `Cancelled investment in ${product.name}`]
 			);
 
 			await connection.commit();

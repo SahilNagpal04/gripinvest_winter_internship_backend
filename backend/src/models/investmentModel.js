@@ -6,13 +6,18 @@ const { query } = require('../config/database');
 const createInvestment = async (investmentData) => {
   const { user_id, product_id, amount, expected_return, maturity_date } = investmentData;
 
-  const result = await query(
+  await query(
     `INSERT INTO investments (user_id, product_id, amount, expected_return, maturity_date) 
      VALUES (?, ?, ?, ?, ?)`,
     [user_id, product_id, amount, expected_return, maturity_date]
   );
 
-  return result.insertId;
+  const result = await query(
+    'SELECT id FROM investments WHERE user_id = ? AND product_id = ? ORDER BY invested_at DESC LIMIT 1',
+    [user_id, product_id]
+  );
+
+  return result[0].id;
 };
 
 /**
