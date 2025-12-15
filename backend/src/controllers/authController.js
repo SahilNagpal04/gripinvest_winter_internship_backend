@@ -5,7 +5,7 @@ const { AppError } = require('../middleware/errorHandler');
 const { generateOTP, sendOTP, verifyOTP } = require('../utils/emailService');
 
 /**
- * Signup Step 1 - Create user and send OTP
+ * Signup - Create user directly
  */
 const signup = async (req, res, next) => {
   try {
@@ -24,16 +24,7 @@ const signup = async (req, res, next) => {
 
     const existingUser = await userModel.findUserByEmail(email);
     if (existingUser) {
-      if (!existingUser.email_verified) {
-        const lastDeleted = await userModel.getLastDeletionTime(email);
-        if (lastDeleted && (Date.now() - lastDeleted) < 3600000) {
-          return next(new AppError('Please wait before trying again', 429));
-        }
-        await userModel.deleteUser(existingUser.id);
-        console.log(`[SIGNUP] Deleted unverified account for: ${email}`);
-      } else {
-        return next(new AppError('Email already registered', 400));
-      }
+      return next(new AppError('Email already registered', 400));
     }
 
     const password_hash = await hashPassword(password);
@@ -45,65 +36,16 @@ const signup = async (req, res, next) => {
       risk_appetite: risk_appetite || 'moderate'
     });
 
-    const otp = generateOTP();
-    const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
-    await userModel.store2FAOTP(userId, otp, expiryTime);
-    try {
-      await sendOTP(email, otp, 'Email Verification for Signup');
-    } catch (emailError) {
-      await userModel.clear2FAOTP(userId);
-      throw new AppError('Failed to send verification email. Please try again.', 500);
-    }
+    await userModel.verifyEmail(userId);
+
+    const user = await userModel.findUserById(userId);
+    const token = generateToken({ userId: user.id, email: user.email });
 
     console.log(`[SIGNUP] User created successfully. UserId: ${userId}, Email: ${email}`);
 
     res.status(201).json({
       status: 'success',
-      message: 'OTP sent to your email. Please verify to complete signup.',
-      data: {
-        userId,
-        email,
-        requiresVerification: true
-      }
-    });
-  } catch (error) {
-    console.error(`[SIGNUP] Error: ${error.message}`);
-    next(error);
-  }
-};
-
-/**
- * Signup Step 2 - Verify OTP and complete registration
- */
-const verifySignupOTP = async (req, res, next) => {
-  try {
-    const { userId, otp } = req.body;
-    console.log(`[VERIFY_SIGNUP] Verifying OTP for userId: ${userId}`);
-
-    const user = await userModel.findUserById(userId);
-    if (!user) {
-      return next(new AppError('User not found', 404));
-    }
-
-    if (user.email_verified) {
-      return next(new AppError('Email already verified', 400));
-    }
-
-    const verification = verifyOTP(user.two_factor_code, user.two_factor_expires, otp);
-    if (!verification.valid) {
-      return next(new AppError(verification.message, 400));
-    }
-
-    await userModel.verifyEmail(userId);
-    await userModel.clear2FAOTP(userId);
-
-    const token = generateToken({ userId: user.id, email: user.email });
-
-    console.log(`[VERIFY_SIGNUP] Email verified successfully for: ${user.email}`);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Email verified successfully. Registration complete!',
+      message: 'Signup successful',
       data: {
         user: {
           id: user.id,
@@ -117,13 +59,24 @@ const verifySignupOTP = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error(`[VERIFY_SIGNUP] Error: ${error.message}`);
+    console.error(`[SIGNUP] Error: ${error.message}`);
     next(error);
   }
 };
 
 /**
- * Login Step 1 - Verify credentials
+ * Verify Signup OTP - Deprecated (kept for backward compatibility)
+ */
+const verifySignupOTP = async (req, res, next) => {
+  try {
+    return next(new AppError('OTP verification is no longer required', 400));
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Login - Verify credentials and return token
  */
 const login = async (req, res, next) => {
   try {
@@ -135,36 +88,9 @@ const login = async (req, res, next) => {
       return next(new AppError('Invalid email or password', 401));
     }
 
-    if (!user.email_verified) {
-      return next(new AppError('Please verify your email first', 401));
-    }
-
     const isPasswordValid = await comparePassword(password, user.password_hash);
     if (!isPasswordValid) {
       return next(new AppError('Invalid email or password', 401));
-    }
-
-    if (user.two_factor_enabled) {
-      const otp = generateOTP();
-      const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
-      await userModel.store2FAOTP(user.id, otp, expiryTime);
-      try {
-        await sendOTP(email, otp, 'Login Verification');
-      } catch (emailError) {
-        await userModel.clear2FAOTP(user.id);
-        throw new AppError('Failed to send verification code. Please try again.', 500);
-      }
-
-      console.log(`[LOGIN] 2FA OTP sent for: ${email}`);
-
-      return res.status(200).json({
-        status: 'success',
-        message: 'OTP sent to your email',
-        data: {
-          userId: user.id,
-          requires2FA: true
-        }
-      });
     }
 
     const token = generateToken({ userId: user.id, email: user.email });
@@ -195,48 +121,12 @@ const login = async (req, res, next) => {
 };
 
 /**
- * Login Step 2 - Verify 2FA OTP
+ * Verify Login 2FA - Deprecated (kept for backward compatibility)
  */
 const verifyLogin2FA = async (req, res, next) => {
   try {
-    const { userId, otp } = req.body;
-    console.log(`[VERIFY_LOGIN] Verifying 2FA OTP for userId: ${userId}`);
-
-    const user = await userModel.findUserById(userId);
-    if (!user) {
-      return next(new AppError('User not found', 404));
-    }
-
-    const verification = verifyOTP(user.two_factor_code, user.two_factor_expires, otp);
-    if (!verification.valid) {
-      return next(new AppError(verification.message, 400));
-    }
-
-    await userModel.clear2FAOTP(userId);
-
-    const token = generateToken({ userId: user.id, email: user.email });
-
-    console.log(`[VERIFY_LOGIN] 2FA verification successful for: ${user.email}`);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Login successful',
-      data: {
-        user: {
-          id: user.id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          risk_appetite: user.risk_appetite,
-          balance: user.balance,
-          is_admin: user.is_admin,
-          two_factor_enabled: user.two_factor_enabled
-        },
-        token
-      }
-    });
+    return next(new AppError('2FA verification is no longer required', 400));
   } catch (error) {
-    console.error(`[VERIFY_LOGIN] Error: ${error.message}`);
     next(error);
   }
 };
@@ -266,72 +156,23 @@ const checkPassword = async (req, res, next) => {
 };
 
 /**
- * Request password reset - Generate OTP
+ * Request password reset - Deprecated (kept for backward compatibility)
  */
 const requestPasswordReset = async (req, res, next) => {
   try {
-    const { email } = req.body;
-    console.log(`[PASSWORD_RESET] Reset requested for email: ${email}`);
-
-    const user = await userModel.findUserByEmail(email);
-    if (!user) {
-      return next(new AppError('No user found with this email', 404));
-    }
-
-    const otp = generateOTP();
-    const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
-
-    await userModel.storePasswordResetOTP(email, otp, expiryTime);
-    try {
-      await sendOTP(email, otp, 'Password Reset');
-    } catch (emailError) {
-      throw new AppError('Failed to send reset code. Please try again.', 500);
-    }
-
-    console.log(`[PASSWORD_RESET] OTP sent successfully to: ${email}`);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'OTP sent to your email',
-      data: {
-        expiresIn: '10 minutes'
-      }
-    });
+    return next(new AppError('Nope! Try remembering your password instead 🧠', 400));
   } catch (error) {
-    console.error(`[PASSWORD_RESET] Error: ${error.message}`);
     next(error);
   }
 };
 
 /**
- * Reset password using OTP
+ * Reset password - Deprecated (kept for backward compatibility)
  */
 const resetPassword = async (req, res, next) => {
   try {
-    const { email, otp, newPassword } = req.body;
-    console.log(`[RESET_PASSWORD] Attempting password reset for: ${email}`);
-
-    const user = await userModel.verifyOTP(email, otp);
-    if (!user) {
-      return next(new AppError('Invalid or expired OTP', 400));
-    }
-
-    const passwordStrength = checkPasswordStrength(newPassword);
-    if (!passwordStrength.isStrong) {
-      return next(new AppError('Password is not strong enough. ' + passwordStrength.feedback.join(', '), 400));
-    }
-
-    const password_hash = await hashPassword(newPassword);
-    await userModel.updatePassword(user.id, password_hash);
-
-    console.log(`[RESET_PASSWORD] Password reset successful for: ${email}`);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Password reset successful. Please login with your new password'
-    });
+    return next(new AppError('Nope! Try remembering your password instead 🧠', 400));
   } catch (error) {
-    console.error(`[RESET_PASSWORD] Error: ${error.message}`);
     next(error);
   }
 };
@@ -396,40 +237,12 @@ const updateProfile = async (req, res, next) => {
 };
 
 /**
- * Resend OTP
+ * Resend OTP - Deprecated (kept for backward compatibility)
  */
 const resendOTP = async (req, res, next) => {
   try {
-    const { userId } = req.body;
-    console.log(`[RESEND_OTP] Resending OTP for userId: ${userId}`);
-
-    if (!userId) {
-      return next(new AppError('User ID is required', 400));
-    }
-
-    const user = await userModel.findUserById(userId);
-    if (!user) {
-      return next(new AppError('User not found', 404));
-    }
-
-    const otp = generateOTP();
-    const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
-    await userModel.store2FAOTP(userId, otp, expiryTime);
-    try {
-      await sendOTP(user.email, otp, 'OTP Resend');
-    } catch (emailError) {
-      await userModel.clear2FAOTP(userId);
-      throw new AppError('Failed to send OTP. Please try again.', 500);
-    }
-
-    console.log(`[RESEND_OTP] OTP resent successfully to: ${user.email}`);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'New OTP sent successfully. Previous OTP is now invalid.'
-    });
+    return next(new AppError('OTP functionality is no longer supported', 400));
   } catch (error) {
-    console.error(`[RESEND_OTP] Error: ${error.message}`);
     next(error);
   }
 };

@@ -39,7 +39,7 @@ const findUserByEmail = async (email) => {
  */
 const findUserById = async (userId) => {
   const users = await query(
-    'SELECT id, first_name, last_name, email, risk_appetite, balance, is_admin, two_factor_enabled, two_factor_code, two_factor_expires, email_verified, created_at FROM users WHERE id = ?',
+    'SELECT id, first_name, last_name, email, risk_appetite, balance, is_admin, two_factor_enabled, otp as two_factor_code, otp_expiry as two_factor_expires, email_verified, created_at FROM users WHERE id = ?',
     [userId]
   );
   
@@ -138,7 +138,7 @@ const updatePassword = async (userId, newPasswordHash) => {
  */
 const store2FAOTP = async (userId, otp, expiryTime) => {
   await query(
-    'UPDATE users SET two_factor_code = ?, two_factor_expires = ? WHERE id = ?',
+    'UPDATE users SET otp = ?, otp_expiry = ? WHERE id = ?',
     [otp, expiryTime, userId]
   );
 };
@@ -148,7 +148,7 @@ const store2FAOTP = async (userId, otp, expiryTime) => {
  */
 const clear2FAOTP = async (userId) => {
   await query(
-    'UPDATE users SET two_factor_code = NULL, two_factor_expires = NULL WHERE id = ?',
+    'UPDATE users SET otp = NULL, otp_expiry = NULL WHERE id = ?',
     [userId]
   );
 };
@@ -158,7 +158,7 @@ const clear2FAOTP = async (userId) => {
  */
 const verifyEmail = async (userId) => {
   await query(
-    'UPDATE users SET email_verified = TRUE, two_factor_code = NULL, two_factor_expires = NULL WHERE id = ?',
+    'UPDATE users SET email_verified = TRUE, otp = NULL, otp_expiry = NULL WHERE id = ?',
     [userId]
   );
 };

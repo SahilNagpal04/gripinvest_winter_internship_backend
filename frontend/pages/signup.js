@@ -14,10 +14,7 @@ export default function Signup() {
     }
   }, []);
   
-  // Step state (1: form, 2: OTP verification)
-  const [step, setStep] = useState(1);
-  const [userId, setUserId] = useState(null);
-  const [otp, setOtp] = useState('');
+  // Removed OTP step state
   // Form state
   const [formData, setFormData] = useState({
     first_name: '',
@@ -37,7 +34,6 @@ export default function Signup() {
   // Password visibility states
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Handle input changes
   const handleChange = async (e) => {
@@ -75,7 +71,7 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      // Call signup API - sends OTP
+      // Call signup API - direct registration
       const response = await authAPI.signup({
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -84,9 +80,8 @@ export default function Signup() {
         risk_appetite: formData.risk_appetite,
       });
 
-      setUserId(response.data.data.userId);
-      setSuccess('OTP sent to your email. Please check and verify.');
-      setStep(2);
+      saveAuth(response.data.data.token, response.data.data.user);
+      router.push('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Signup failed. Please try again.');
     } finally {
@@ -94,56 +89,14 @@ export default function Signup() {
     }
   };
 
-  // Handle OTP verification
-  const handleVerifyOTP = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
 
-    try {
-      const response = await authAPI.verifySignup({ userId, otp });
-      saveAuth(response.data.data.token, response.data.data.user);
-      router.push('/');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid OTP. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle resend OTP
-  const handleResendOTP = async () => {
-    if (resendCooldown > 0) return;
-    
-    setError('');
-    setLoading(true);
-
-    try {
-      await authAPI.resendOTP({ userId });
-      setSuccess('OTP resent to your email.');
-      setResendCooldown(15);
-      const timer = setInterval(() => {
-        setResendCooldown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to resend OTP.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Layout>
       <div className="max-w-md mx-auto">
         <div className="card">
           <h1 className="text-3xl font-bold text-center mb-6">
-            {step === 1 ? 'Sign Up' : 'Verify Email'}
+            Sign Up
           </h1>
 
           {/* Success message */}
@@ -160,9 +113,8 @@ export default function Signup() {
             </div>
           )}
 
-          {step === 1 ? (
-            /* Signup form */
-            <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Signup form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* First Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -224,7 +176,7 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white cursor-pointer hover:opacity-80"
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,7 +238,7 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white cursor-pointer hover:opacity-80"
                 >
                   {showConfirmPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,57 +278,9 @@ export default function Signup() {
               disabled={loading}
               className="w-full btn btn-primary"
             >
-              {loading ? 'Sending OTP...' : 'Sign Up'}
+              {loading ? 'Creating Account...' : 'Sign Up'}
             </button>
-            </form>
-          ) : (
-            /* OTP Verification */
-            <form onSubmit={handleVerifyOTP} className="space-y-4">
-            <p className="text-gray-600 text-sm mb-4">
-              We've sent a 6-digit OTP to <strong>{formData.email}</strong>. Please enter it below to complete your registration.
-            </p>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Enter OTP
-              </label>
-              <input
-                type="text"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className="input text-center text-2xl tracking-widest"
-                placeholder="000000"
-                maxLength={6}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn btn-primary"
-            >
-              {loading ? 'Verifying...' : 'Verify & Complete Signup'}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleResendOTP}
-              disabled={loading || resendCooldown > 0}
-              className="w-full text-center text-primary hover:underline disabled:text-gray-400 disabled:cursor-not-allowed"
-            >
-              {resendCooldown > 0 ? `Resend OTP (${resendCooldown}s)` : 'Resend OTP'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => { setStep(1); setOtp(''); setError(''); setSuccess(''); }}
-              className="w-full text-center text-gray-600 hover:text-gray-900"
-            >
-              Change Email
-            </button>
-            </form>
-          )}
+          </form>
 
           {/* Login link */}
           <p className="text-center mt-4 text-gray-600">
