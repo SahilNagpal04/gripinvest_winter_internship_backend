@@ -464,13 +464,8 @@ This project is part of Grip Invest Winter Internship 2025.
 
 **Sahil Nagpal**
 - GitHub: [@SahilNagpal04](https://github.com/SahilNagpal04)
-- Email: [Your Email]
+- Email: sahilnagpal.tech@gmail.com
 
-## 🙏 Acknowledgments
-
-- Grip Invest for the internship opportunity
-- AI tools used for development acceleration
-- Open source community
 
 ---
 
