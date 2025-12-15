@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS investments (
     status ENUM('active','matured','cancelled') DEFAULT 'active',
     expected_return DECIMAL(12,2),
     maturity_date DATE,
+    notification_read BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES investment_products(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
