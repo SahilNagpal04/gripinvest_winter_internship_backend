@@ -84,7 +84,13 @@ const getAllProducts = async (req, res, next) => {
 		const filters = {};
 		if (investment_type) filters.investment_type = investment_type;
 		if (risk_level) filters.risk_level = risk_level;
-		if (min_yield) filters.min_yield = parseFloat(min_yield);
+		if (min_yield) {
+			const parsedYield = parseFloat(min_yield);
+			if (isNaN(parsedYield)) {
+				return next(new AppError('Invalid min_yield value', 400));
+			}
+			filters.min_yield = parsedYield;
+		}
 
 		const products = await productModel.getAllProducts(filters);
 
@@ -137,12 +143,16 @@ const updateProduct = async (req, res, next) => {
 
 		const allowedFields = ['name', 'investment_type', 'tenure_months', 'annual_yield', 'risk_level', 'min_investment', 'max_investment', 'description'];
 		const filteredData = {};
+		const maxFields = 10;
+		let fieldCount = 0;
 
-		Object.keys(updateData).forEach(key => {
+		for (const key of Object.keys(updateData)) {
+			if (fieldCount >= maxFields) break;
 			if (allowedFields.includes(key)) {
 				filteredData[key] = updateData[key];
+				fieldCount++;
 			}
-		});
+		}
 
 		if (Object.keys(filteredData).length === 0) {
 			return next(new AppError('No valid fields to update', 400));
@@ -197,6 +207,11 @@ const deleteProduct = async (req, res, next) => {
 	try {
 		const { id } = req.params;
 		console.log(`[DELETE_PRODUCT] Deleting product: ${id}`);
+
+		const product = await productModel.getProductById(id);
+		if (!product) {
+			return next(new AppError('Product not found', 404));
+		}
 
 		await productModel.deleteProduct(id);
 

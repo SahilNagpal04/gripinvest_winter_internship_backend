@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 // Tailwind CSS configuration - defines styling system
 module.exports = {
+  darkMode: 'class',
   // Files where Tailwind should look for class names
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',

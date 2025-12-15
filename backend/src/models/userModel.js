@@ -174,9 +174,27 @@ const update2FAStatus = async (userId, enabled) => {
 };
 
 /**
+ * Get last deletion time for email
+ */
+const getLastDeletionTime = async (email) => {
+  const result = await query(
+    'SELECT last_deletion FROM user_deletions WHERE email = ?',
+    [email]
+  );
+  return result.length > 0 ? new Date(result[0].last_deletion).getTime() : null;
+};
+
+/**
  * Delete user
  */
 const deleteUser = async (userId) => {
+  const user = await findUserById(userId);
+  if (user) {
+    await query(
+      'INSERT INTO user_deletions (email, last_deletion) VALUES (?, NOW()) ON DUPLICATE KEY UPDATE last_deletion = NOW()',
+      [user.email]
+    );
+  }
   await query(
     'DELETE FROM users WHERE id = ?',
     [userId]
@@ -197,5 +215,6 @@ module.exports = {
   clear2FAOTP,
   verifyEmail,
   update2FAStatus,
-  deleteUser
+  deleteUser,
+  getLastDeletionTime
 };

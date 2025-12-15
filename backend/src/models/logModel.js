@@ -1,15 +1,15 @@
-const { query } = require('../config/database');
+const db = require('../config/database');
 
 /**
  * Get logs by user ID
  */
 const getLogsByUserId = async (userId, limit = 100) => {
-  return await query(
+  return await db.query(
     `SELECT * FROM transaction_logs 
      WHERE user_id = ? 
      ORDER BY created_at DESC 
-     LIMIT ${parseInt(limit)}`,
-    [userId]
+     LIMIT ?`,
+    [userId, parseInt(limit)]
   );
 };
 
@@ -17,12 +17,12 @@ const getLogsByUserId = async (userId, limit = 100) => {
  * Get logs by email
  */
 const getLogsByEmail = async (email, limit = 100) => {
-  return await query(
+  return await db.query(
     `SELECT * FROM transaction_logs 
      WHERE email = ? 
      ORDER BY created_at DESC 
-     LIMIT ${parseInt(limit)}`,
-    [email]
+     LIMIT ?`,
+    [email, parseInt(limit)]
   );
 };
 
@@ -30,10 +30,11 @@ const getLogsByEmail = async (email, limit = 100) => {
  * Get all logs (Admin only)
  */
 const getAllLogs = async (limit = 100, offset = 0) => {
-  return await query(
+  return await db.query(
     `SELECT * FROM transaction_logs 
      ORDER BY created_at DESC 
-     LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`
+     LIMIT ? OFFSET ?`,
+    [parseInt(limit), parseInt(offset)]
   );
 };
 
@@ -41,7 +42,7 @@ const getAllLogs = async (limit = 100, offset = 0) => {
  * Get error logs for a user
  */
 const getErrorLogsByUserId = async (userId) => {
-  return await query(
+  return await db.query(
     `SELECT * FROM transaction_logs 
      WHERE user_id = ? AND status_code >= 400 
      ORDER BY created_at DESC`,
@@ -53,7 +54,7 @@ const getErrorLogsByUserId = async (userId) => {
  * Get error summary for a user
  */
 const getErrorSummary = async (userId) => {
-  return await query(
+  return await db.query(
     `SELECT 
        status_code,
        COUNT(*) as error_count,
@@ -81,7 +82,7 @@ const getLogsByDateRange = async (startDate, endDate, userId = null) => {
 
   sql += ' ORDER BY created_at DESC';
 
-  return await query(sql, params);
+  return await db.query(sql, params);
 };
 
 module.exports = {

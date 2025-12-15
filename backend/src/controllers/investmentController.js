@@ -13,7 +13,8 @@ const createInvestment = async (req, res, next) => {
 		const userId = req.user.id;
 		console.log(`[CREATE_INVESTMENT] User ${userId} creating investment for product ${product_id}, amount: ₹${amount}`);
 
-		if (!amount || amount <= 0) {
+		const investAmount = parseFloat(amount);
+		if (!investAmount || isNaN(investAmount) || investAmount <= 0) {
 			return next(new AppError('Invalid investment amount', 400));
 		}
 
@@ -22,20 +23,20 @@ const createInvestment = async (req, res, next) => {
 			return next(new AppError('Product not found', 404));
 		}
 
-		if (amount < product.min_investment) {
+		if (investAmount < product.min_investment) {
 			return next(new AppError(`Minimum investment for this product is ₹${product.min_investment}`, 400));
 		}
 
-		if (product.max_investment && amount > product.max_investment) {
+		if (product.max_investment && investAmount > product.max_investment) {
 			return next(new AppError(`Maximum investment for this product is ₹${product.max_investment}`, 400));
 		}
 
 		const userBalance = await userModel.getUserBalance(userId);
-		if (amount > userBalance) {
+		if (investAmount > userBalance) {
 			return next(new AppError(`Insufficient balance. Your current balance is ₹${userBalance}`, 400));
 		}
 
-		const expectedReturn = amount * (1 + (product.annual_yield / 100) * (product.tenure_months / 12));
+		const expectedReturn = investAmount * (1 + (product.annual_yield / 100) * (product.tenure_months / 12));
 
 		const maturityDate = new Date();
 		maturityDate.setMonth(maturityDate.getMonth() + product.tenure_months);
@@ -47,15 +48,19 @@ const createInvestment = async (req, res, next) => {
 			const investmentId = await investmentModel.createInvestment({
 				user_id: userId,
 				product_id,
-				amount,
+				amount: investAmount,
 				expected_return: expectedReturn,
 				maturity_date: maturityDate.toISOString().split('T')[0]
 			});
 
-			await userModel.updateUserBalance(userId, -amount);
+			await userModel.updateUserBalance(userId, -investAmount);
+
+			await connection.query(
+				'INSERT INTO financial_transactions (user_id, investment_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?)',
+				[userId, investmentId, 'investment_created', investAmount, `Investment in ${product.name}`]
+			);
 
 			await connection.commit();
-
 			const investment = await investmentModel.getInvestmentById(investmentId);
 
 			console.log(`[CREATE_INVESTMENT] Investment created successfully. InvestmentId: ${investmentId}`);
@@ -68,12 +73,11 @@ const createInvestment = async (req, res, next) => {
 				}
 			});
 		} catch (error) {
-			await connection.rollback();
-			console.error(`[CREATE_INVESTMENT] Transaction failed: ${error.message}`);
-			next(new AppError('Failed to create investment. Your balance has not been deducted.', 500));
-			return;
+			if (connection) await connection.rollback();
+			console.error(`[CREATE_INVESTMENT] Error: ${error.message}`);
+			next(error);
 		} finally {
-			connection.release();
+			if (connection) connection.release();
 		}
 	} catch (error) {
 		console.error(`[CREATE_INVESTMENT] Error: ${error.message}`);
@@ -92,6 +96,7 @@ const getPortfolio = async (req, res, next) => {
 		const investments = await investmentModel.getUserPortfolio(userId);
 		const summary = await investmentModel.getPortfolioSummary(userId);
 		const riskDistribution = await investmentModel.getPortfolioRiskDistribution(userId);
+		const healthScore = await calculateHealthScore(userId);
 
 		const insights = generatePortfolioInsights(summary, riskDistribution);
 
@@ -103,7 +108,8 @@ const getPortfolio = async (req, res, next) => {
 				summary,
 				riskDistribution,
 				investments,
-				insights
+				insights,
+				healthScore
 			}
 		});
 	} catch (error) {
@@ -160,7 +166,7 @@ const cancelInvestment = async (req, res, next) => {
 			return next(new AppError('Investment not found', 404));
 		}
 
-		if (Number(investment.user_id) !== Number(userId)) {
+		if (String(investment.user_id) !== String(userId) && !req.user.is_admin) {
 			return next(new AppError('Access denied', 403));
 		}
 
@@ -175,6 +181,12 @@ const cancelInvestment = async (req, res, next) => {
 			await investmentModel.cancelInvestment(id);
 			await userModel.updateUserBalance(userId, investment.amount);
 
+			const product = await productModel.getProductById(investment.product_id);
+			await connection.query(
+				'INSERT INTO financial_transactions (user_id, investment_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?)',
+				[userId, id, 'investment_cancelled', investment.amount, `Cancelled investment in ${product.name}`]
+			);
+
 			await connection.commit();
 
 			console.log(`[CANCEL_INVESTMENT] Investment cancelled successfully: ${id}`);
@@ -184,16 +196,94 @@ const cancelInvestment = async (req, res, next) => {
 				message: 'Investment cancelled successfully. Amount refunded to your balance'
 			});
 		} catch (error) {
-			await connection.rollback();
-			console.error(`[CANCEL_INVESTMENT] Transaction failed: ${error.message}`);
-			next(new AppError('Failed to cancel investment. No changes have been made.', 500));
-			return;
+			if (connection) await connection.rollback();
+			throw error;
 		} finally {
-			connection.release();
+			if (connection) connection.release();
 		}
 	} catch (error) {
 		console.error(`[CANCEL_INVESTMENT] Error: ${error.message}`);
 		next(error);
+	}
+};
+
+/**
+ * Helper functions for health score calculation
+ */
+const calculateDiversificationScore = (typeCount) => {
+	if (typeCount === 1) return 10;
+	if (typeCount === 2) return 18;
+	if (typeCount === 3) return 24;
+	if (typeCount === 4) return 28;
+	return 30;
+};
+
+const calculateRiskBalanceScore = (lowRisk, moderateRisk, highRisk) => {
+	if (lowRisk > 0 && moderateRisk > 0 && highRisk > 0) return 30;
+	if ((lowRisk > 0 && moderateRisk > 0) || (moderateRisk > 0 && highRisk > 0)) return 20;
+	return 10;
+};
+
+const calculateReturnsScore = (avgReturn) => {
+	if (avgReturn > 12) return 20;
+	if (avgReturn >= 10) return 15;
+	if (avgReturn >= 8) return 10;
+	return 5;
+};
+
+const calculateActiveInvestmentsScore = (totalInvestments) => {
+	if (totalInvestments >= 10) return 20;
+	if (totalInvestments >= 6) return 18;
+	if (totalInvestments >= 3) return 14;
+	return 8;
+};
+
+/**
+ * Calculate portfolio health score
+ */
+const calculateHealthScore = async (userId) => {
+	try {
+		const stats = await db.query(`
+			SELECT 
+				COUNT(DISTINCT p.investment_type) as type_count,
+				COUNT(*) as total_investments,
+				AVG(p.annual_yield) as avg_return,
+				SUM(CASE WHEN p.risk_level = 'low' THEN 1 ELSE 0 END) as low_risk,
+				SUM(CASE WHEN p.risk_level = 'moderate' THEN 1 ELSE 0 END) as moderate_risk,
+				SUM(CASE WHEN p.risk_level = 'high' THEN 1 ELSE 0 END) as high_risk
+			FROM investments i
+			JOIN investment_products p ON i.product_id = p.id
+			WHERE i.user_id = ? AND i.status = 'active'
+		`, [userId]);
+
+		const portfolioStats = stats[0];
+		if (!portfolioStats || portfolioStats.total_investments === 0) {
+			return { score: 0, status: 'No Investments', breakdown: {}, tips: ['Start investing to build your portfolio'] };
+		}
+
+		const diversification = calculateDiversificationScore(portfolioStats.type_count);
+		const riskBalance = calculateRiskBalanceScore(portfolioStats.low_risk, portfolioStats.moderate_risk, portfolioStats.high_risk);
+		const returns = calculateReturnsScore(portfolioStats.avg_return);
+		const activeInv = calculateActiveInvestmentsScore(portfolioStats.total_investments);
+
+		const score = diversification + riskBalance + returns + activeInv;
+		const status = score > 80 ? 'Excellent' : score > 60 ? 'Healthy' : score > 40 ? 'Fair' : 'Needs Attention';
+
+		const tips = [];
+		if (diversification < 20) tips.push('Add more investment types for better diversification');
+		if (riskBalance < 20) tips.push('Balance your portfolio across different risk levels');
+		if (returns < 10) tips.push('Consider higher-yield products like bonds or mutual funds');
+		if (activeInv < 10) tips.push('Invest in 2-3 more products to spread risk');
+
+		return {
+			score,
+			status,
+			breakdown: { diversification, riskBalance, returns, activeInvestments: activeInv },
+			tips
+		};
+	} catch (error) {
+		console.error('[HEALTH_SCORE] Error:', error);
+		return { score: 0, status: 'Error', breakdown: {}, tips: [] };
 	}
 };
 

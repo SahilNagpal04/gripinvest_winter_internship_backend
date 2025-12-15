@@ -50,7 +50,7 @@ export default function Products() {
         loadRecommended();
       }
     }
-  }, [router.query.recommended]);
+  }, [router.query.recommended, router.query.risk]);
 
   // Fetch all products
   const loadProducts = async () => {
@@ -137,27 +137,27 @@ export default function Products() {
             </div>
           ) : (
             <>
-              <h1 className="text-3xl font-bold text-gray-900">Investment Products</h1>
-              <p className="text-gray-600 mt-1">Explore our diverse range of investment options</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Investment Products</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Explore our diverse range of investment options</p>
             </>
           )}
         </div>
 
         {/* AI Recommended Products */}
         {!showingRecommended && recommended.length > 0 && (
-          <div className="card bg-gradient-to-r from-purple-50 to-blue-50">
+          <div className="card bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">🤖</span>
-              <h2 className="text-xl font-bold text-gray-900">Recommended for You</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Recommended for You</h2>
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               {recommended.slice(0, 3).map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow"
                   onClick={() => router.push(`/products/${product.id}`)}
                 >
-                  <h3 className="font-bold text-gray-900 mb-2">{product.name}</h3>
+                  <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">{product.name}</h3>
                   <div className="flex justify-between items-center">
                     <span className="text-2xl font-bold text-green-600">
                       {product.annual_yield}%
@@ -200,7 +200,7 @@ export default function Products() {
 
         {/* Filters & Sort */}
         <div className="card">
-          <h3 className="font-bold text-gray-900 mb-4">Additional Filters</h3>
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">Additional Filters</h3>
           <div className="grid md:grid-cols-4 gap-4">
             {/* Search */}
             <input
@@ -261,7 +261,7 @@ export default function Products() {
           </div>
         ) : (showingRecommended ? recommended.filter(p => !filters.investment_type || p.investment_type === filters.investment_type) : filteredProducts).length === 0 ? (
           <div className="card text-center py-12">
-            <p className="text-gray-600">No products found matching your criteria.</p>
+            <p className="text-gray-600 dark:text-gray-400">No products found matching your criteria.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-6">
@@ -274,7 +274,7 @@ export default function Products() {
                 {/* Product header */}
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
-                    <h3 className="font-bold text-lg text-gray-900">{product.name}</h3>
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{product.name}</h3>
                     {showingRecommended && (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 mt-1">
                         ✨ AI Pick
@@ -287,23 +287,23 @@ export default function Products() {
                 </div>
 
                 {/* Product type */}
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                   {getInvestmentTypeLabel(product.investment_type)}
                 </p>
 
                 {/* Product details */}
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Annual Yield:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Annual Yield:</span>
                     <span className="font-bold text-green-600">{product.annual_yield}%</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Tenure:</span>
-                    <span className="font-medium">{product.tenure_months} months</span>
+                    <span className="text-gray-600 dark:text-gray-400">Tenure:</span>
+                    <span className="font-medium dark:text-gray-100">{product.tenure_days ? `${product.tenure_days} days` : `${product.tenure_months} months`}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Min Investment:</span>
-                    <span className="font-medium">{formatCurrency(product.min_investment)}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Min Investment:</span>
+                    <span className="font-medium dark:text-gray-100">{formatCurrency(product.min_investment)}</span>
                   </div>
                 </div>
 

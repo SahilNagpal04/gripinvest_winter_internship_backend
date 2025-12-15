@@ -4,15 +4,23 @@ const { AppError } = require('../middleware/errorHandler');
 /**
  * Get logs for current user
  */
+const validateLimit = (limit) => {
+	const parsedLimit = parseInt(limit);
+	if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 1000) {
+		return { valid: false, error: 'Limit must be between 1 and 1000' };
+	}
+	return { valid: true, value: parsedLimit };
+};
+
 const getMyLogs = async (req, res, next) => {
 	try {
 		const userId = req.user.id;
-		const limit = parseInt(req.query.limit) || 100;
-		console.log(`[GET_MY_LOGS] Fetching logs for userId: ${userId}, limit: ${limit}`);
-
-		if (isNaN(limit) || limit < 1 || limit > 1000) {
-			return next(new AppError('Limit must be between 1 and 1000', 400));
+		const limitValidation = validateLimit(req.query.limit || 100);
+		if (!limitValidation.valid) {
+			return next(new AppError(limitValidation.error, 400));
 		}
+		const limit = limitValidation.value;
+		console.log(`[GET_MY_LOGS] Fetching logs for userId: ${userId}, limit: ${limit}`);
 
 		const logs = await logModel.getLogsByUserId(userId, limit);
 
@@ -66,13 +74,13 @@ const getMyErrorLogs = async (req, res, next) => {
  */
 const getAllLogs = async (req, res, next) => {
 	try {
-		const limit = parseInt(req.query.limit) || 100;
+		const limitValidation = validateLimit(req.query.limit || 100);
+		if (!limitValidation.valid) {
+			return next(new AppError(limitValidation.error, 400));
+		}
+		const limit = limitValidation.value;
 		const offset = parseInt(req.query.offset) || 0;
 		console.log(`[GET_ALL_LOGS] Admin fetching logs, limit: ${limit}, offset: ${offset}`);
-
-		if (isNaN(limit) || limit < 1 || limit > 1000) {
-			return next(new AppError('Limit must be between 1 and 1000', 400));
-		}
 
 		if (isNaN(offset) || offset < 0) {
 			return next(new AppError('Offset must be a non-negative number', 400));
@@ -101,15 +109,15 @@ const getAllLogs = async (req, res, next) => {
 const getLogsByUserId = async (req, res, next) => {
 	try {
 		const { userId } = req.params;
-		const limit = parseInt(req.query.limit) || 100;
+		const limitValidation = validateLimit(req.query.limit || 100);
+		if (!limitValidation.valid) {
+			return next(new AppError(limitValidation.error, 400));
+		}
+		const limit = limitValidation.value;
 		console.log(`[GET_LOGS_BY_USER_ID] Admin fetching logs for userId: ${userId}`);
 
 		if (!userId || isNaN(parseInt(userId))) {
 			return next(new AppError('Valid user ID is required', 400));
-		}
-
-		if (isNaN(limit) || limit < 1 || limit > 1000) {
-			return next(new AppError('Limit must be between 1 and 1000', 400));
 		}
 
 		const logs = await logModel.getLogsByUserId(userId, limit);
@@ -135,15 +143,16 @@ const getLogsByUserId = async (req, res, next) => {
 const getLogsByEmail = async (req, res, next) => {
 	try {
 		const { email } = req.params;
-		const limit = parseInt(req.query.limit) || 100;
+		const limitValidation = validateLimit(req.query.limit || 100);
+		if (!limitValidation.valid) {
+			return next(new AppError(limitValidation.error, 400));
+		}
+		const limit = limitValidation.value;
 		console.log(`[GET_LOGS_BY_EMAIL] Admin fetching logs for email: ${email}`);
 
-		if (!email || !email.includes('@')) {
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!email || !emailRegex.test(email)) {
 			return next(new AppError('Valid email is required', 400));
-		}
-
-		if (isNaN(limit) || limit < 1 || limit > 1000) {
-			return next(new AppError('Limit must be between 1 and 1000', 400));
 		}
 
 		const logs = await logModel.getLogsByEmail(email, limit);

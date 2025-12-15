@@ -23,7 +23,7 @@ class AppError extends Error {
  */
 const handleDuplicateFieldsDB = (err) => {
   console.log('[ERROR_HANDLER] Handling duplicate entry error');
-  const match = err.message.match(/(["'])(\\?.)*?\1/);
+  const match = err.message.match(/'([^']+)'/);
   const field = match ? match[0] : 'unknown field';
   const message = `Duplicate field value: ${field}. Please use another value`;
   return new AppError(message, 400);
@@ -89,7 +89,7 @@ const sendErrorProd = (err, res) => {
     });
   } else {
     // Programming or unknown error: don't leak error details
-    console.error('[ERROR_HANDLER] Unexpected error occurred');
+    console.error('[ERROR_HANDLER] Unexpected error occurred:', err);
     res.status(500).json({
       status: 'error',
       message: 'Something went wrong'
@@ -105,19 +105,17 @@ const sendErrorProd = (err, res) => {
  * @param {Function} next - Express next middleware
  */
 const errorHandler = (err, req, res, next) => {
-  console.log('[ERROR_HANDLER] Processing error...');
+  console.log('[ERROR_HANDLER] Processing error:', err.name || 'Unknown');
   
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
+  
+  console.log('[ERROR_HANDLER] Error status code:', err.statusCode);
 
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, res);
   } else {
-    let error = Object.create(err);
-    error.message = err.message;
-    error.statusCode = err.statusCode;
-    error.status = err.status;
-    error.isOperational = err.isOperational;
+    let error = err;
 
     if (err.code === 'ER_DUP_ENTRY') error = handleDuplicateFieldsDB(err);
     if (err.name === 'ValidationError') error = handleValidationErrorDB(err);
@@ -126,6 +124,8 @@ const errorHandler = (err, req, res, next) => {
 
     sendErrorProd(error, res);
   }
+  
+  console.log('[ERROR_HANDLER] Error response sent');
 };
 
 module.exports = {

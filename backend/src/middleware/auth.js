@@ -29,7 +29,9 @@ const protect = async (req, res, next) => {
     }
 
     // Verify token
+    console.log('[AUTH_MIDDLEWARE] Verifying JWT token...');
     const decoded = verifyToken(token);
+    console.log('[AUTH_MIDDLEWARE] Token verified, userId:', decoded.userId);
 
     // Validate decoded token structure
     if (!decoded || !decoded.userId) {
@@ -41,14 +43,14 @@ const protect = async (req, res, next) => {
     }
 
     // Get user from database
-    console.log('[AUTH_MIDDLEWARE] Fetching user from database...');
+    console.log('[AUTH_MIDDLEWARE] Fetching user from database for userId:', decoded.userId);
     const users = await query(
       'SELECT id, first_name, last_name, email, risk_appetite, balance, is_admin FROM users WHERE id = ?',
       [decoded.userId]
     );
 
     if (users.length === 0) {
-      console.log('[AUTH_MIDDLEWARE] User not found in database');
+      console.log('[AUTH_MIDDLEWARE] User not found in database for userId:', decoded.userId);
       return res.status(401).json({
         status: 'error',
         message: 'User not found'
@@ -57,13 +59,13 @@ const protect = async (req, res, next) => {
 
     // Attach user to request object
     req.user = users[0];
-    console.log('[AUTH_MIDDLEWARE] Authentication successful');
+    console.log('[AUTH_MIDDLEWARE] Authentication successful for user:', users[0].email);
     next();
   } catch (error) {
     console.error('[AUTH_MIDDLEWARE] Authentication failed:', error.message);
     
-    // Differentiate between token and database errors
-    const message = error.message.includes('Token') || error.message.includes('token') 
+    // Check error type instead of string matching
+    const message = (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError')
       ? error.message 
       : 'Authentication failed';
     
@@ -82,6 +84,15 @@ const protect = async (req, res, next) => {
 const restrictTo = (...roles) => {
   return (req, res, next) => {
     console.log('[AUTH_MIDDLEWARE] Checking role permissions...');
+    
+    // Validate req.user exists
+    if (!req.user) {
+      console.log('[AUTH_MIDDLEWARE] No user found in request');
+      return res.status(401).json({
+        status: 'error',
+        message: 'Authentication required'
+      });
+    }
     
     // Check if user is admin
     if (roles.includes('admin') && !req.user.is_admin) {

@@ -2,38 +2,51 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { getUser, isAuthenticated, logout } from '../utils/auth';
+import NotificationBell from './NotificationBell';
+
+// Constants
+const SCROLL_THRESHOLD = 300;
+const MENU_CLOSE_DELAY = 300;
 
 export default function Layout({ children }) {
   const router = useRouter();
-  // State to store current user
+  
+  // State management
   const [user, setUser] = useState(null);
-  // State to control mobile menu
+  const [darkMode, setDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // Notifications state
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  // Profile dropdown state
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [profileMenuTimeout, setProfileMenuTimeout] = useState(null);
-  // Scroll to top button visibility
+  const [showCalculatorsMenu, setShowCalculatorsMenu] = useState(false);
+  const [calculatorsMenuTimeout, setCalculatorsMenuTimeout] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Load user data and notifications when component mounts
+  // Initialize user and scroll listener
   useEffect(() => {
     if (isAuthenticated()) {
+      console.log('[LAYOUT] Initializing authenticated user');
       setUser(getUser());
       loadNotifications();
     }
     
-    // Show/hide scroll to top button
+    const isDark = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(isDark);
+    if (isDark) document.documentElement.classList.add('dark');
+    
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
+      setShowScrollTop(window.scrollY > SCROLL_THRESHOLD);
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (profileMenuTimeout) clearTimeout(profileMenuTimeout);
+      if (calculatorsMenuTimeout) clearTimeout(calculatorsMenuTimeout);
+    };
   }, []);
 
-  // Close notifications and profile menu when clicking outside
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = () => {
       setShowNotifications(false);
@@ -45,38 +58,51 @@ export default function Layout({ children }) {
     }
   }, [showNotifications, showProfileMenu]);
 
-  // Load notifications
+  // Fetch matured investment notifications
   const loadNotifications = async () => {
+    console.log('[LAYOUT] Loading notifications');
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/investments/notifications', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/investments/notifications`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!response.ok) throw new Error('Failed to load notifications');
       const data = await response.json();
       if (data.status === 'success') {
         setNotifications(data.data.notifications);
+        console.log(`[LAYOUT] Loaded ${data.data.notifications.length} notifications`);
       }
     } catch (err) {
-      console.error('Failed to load notifications:', err);
+      console.error('[LAYOUT] Failed to load notifications:', err);
     }
   };
 
-  // Handle logout
+  // Logout handler
   const handleLogout = () => {
+    console.log('[LAYOUT] User logging out');
     logout();
+    console.log('[LAYOUT] Logout completed');
+  };
+
+  // Dark mode toggle
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('darkMode', newMode);
+    document.documentElement.classList.toggle('dark');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Navigation Header */}
-      <nav className="bg-white shadow-md">
+      <nav className="bg-white shadow-md dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+          <div className="flex justify-between items-center h-16">
             {/* Logo and brand */}
             <div className="flex items-center">
               <button
                 onClick={() => router.push('/')}
-                className="text-2xl font-bold text-primary cursor-pointer"
+                className="text-3xl font-bold text-primary dark:text-blue-400 cursor-pointer"
               >
                 Grip Invest
               </button>
@@ -86,76 +112,43 @@ export default function Layout({ children }) {
             <div className="hidden md:flex items-center space-x-4">
               {user ? (
                 <>
-                  {/* Logged in user menu */}
-                  <button onClick={() => router.push('/products')} className="text-gray-700 hover:text-primary px-3 py-2">Products</button>
-                  <button onClick={() => router.push('/portfolio')} className="text-gray-700 hover:text-primary px-3 py-2">Portfolio</button>
-                  <button onClick={() => router.push('/history')} className="text-gray-700 hover:text-primary px-3 py-2">Investments</button>
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowNotifications(!showNotifications);
-                      }}
-                      className="text-gray-700 hover:text-primary px-3 py-2 relative"
-                    >
-                      🔔
-                      {notifications.length > 0 && (
-                        <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          {notifications.length}
-                        </span>
-                      )}
+                  {/* Authenticated user menu */}
+                  <button onClick={() => router.push('/products')} className="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 font-semibold">Products</button>
+                  <button onClick={() => router.push('/portfolio')} className="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 font-semibold">Portfolio</button>
+                  <button onClick={() => router.push('/history')} className="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 font-semibold">Investments</button>
+                  <div className="relative" onMouseEnter={() => {
+                    if (calculatorsMenuTimeout) clearTimeout(calculatorsMenuTimeout);
+                    setShowCalculatorsMenu(true);
+                  }} onMouseLeave={() => {
+                    const timeout = setTimeout(() => setShowCalculatorsMenu(false), MENU_CLOSE_DELAY);
+                    setCalculatorsMenuTimeout(timeout);
+                  }}>
+                    <button className="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 font-semibold flex items-center gap-1">
+                      Calculators
+                      <span className={`text-xs transition-transform inline-block ${showCalculatorsMenu ? 'rotate-180' : ''}`}>▼</span>
                     </button>
-                    {showNotifications && notifications.length > 0 && (
-                      <div onClick={(e) => e.stopPropagation()} className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
-                        <div className="p-4">
-                          <h3 className="font-bold text-gray-900 mb-2">Matured Investments</h3>
-                          {notifications.map((notif) => (
-                            <div key={notif.id} className="bg-green-50 p-3 rounded mb-2 cursor-pointer hover:bg-green-100" onClick={(e) => {
-                              if (e.target.tagName !== 'BUTTON') {
-                                router.push('/history?status=matured');
-                              }
-                            }}>
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <p className="font-medium text-sm">{notif.product_name}</p>
-                                  <p className="text-xs text-gray-600">Matured on {new Date(notif.maturity_date).toLocaleDateString()}</p>
-                                  <p className="text-xs text-gray-600">Invested: ₹{notif.amount.toLocaleString()}</p>
-                                  <p className="text-sm font-bold text-green-600">Returns: ₹{(notif.expected_return - notif.amount).toLocaleString()}</p>
-                                </div>
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    try {
-                                      const token = localStorage.getItem('token');
-                                      await fetch(`http://localhost:5000/api/investments/notifications/${notif.id}/read`, {
-                                        method: 'PUT',
-                                        headers: { 'Authorization': `Bearer ${token}` }
-                                      });
-                                      loadNotifications();
-                                    } catch (err) {
-                                      console.error('Failed to mark as read:', err);
-                                    }
-                                  }}
-                                  className="text-lg text-gray-500 hover:text-red-600 font-bold"
-                                  title="Mark as read"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                    {showCalculatorsMenu && (
+                      <div onMouseEnter={() => {
+                        if (calculatorsMenuTimeout) clearTimeout(calculatorsMenuTimeout);
+                        setShowCalculatorsMenu(true);
+                      }} onMouseLeave={() => {
+                        const timeout = setTimeout(() => setShowCalculatorsMenu(false), MENU_CLOSE_DELAY);
+                        setCalculatorsMenuTimeout(timeout);
+                      }} className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
+                        <button onClick={() => router.push('/calculators/bond')} className="block w-full text-left px-4 py-3 hover:bg-gray-100 font-semibold">Bond Calculator</button>
+                        <button onClick={() => router.push('/calculators/etf')} className="block w-full text-left px-4 py-3 hover:bg-gray-100 font-semibold">ETF Calculator</button>
                       </div>
                     )}
                   </div>
+                  <NotificationBell />
                   <div className="relative" onMouseEnter={() => {
                     if (profileMenuTimeout) clearTimeout(profileMenuTimeout);
                     setShowProfileMenu(true);
                   }} onMouseLeave={() => {
-                    const timeout = setTimeout(() => setShowProfileMenu(false), 300);
+                    const timeout = setTimeout(() => setShowProfileMenu(false), MENU_CLOSE_DELAY);
                     setProfileMenuTimeout(timeout);
                   }}>
-                    <button className="text-gray-700 hover:text-primary px-3 py-2 flex items-center gap-1">
+                    <button className="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 flex items-center gap-1">
                       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" strokeWidth="2"/>
                         <circle cx="12" cy="10" r="3" strokeWidth="2"/>
@@ -168,36 +161,44 @@ export default function Layout({ children }) {
                         if (profileMenuTimeout) clearTimeout(profileMenuTimeout);
                         setShowProfileMenu(true);
                       }} onMouseLeave={() => {
-                        const timeout = setTimeout(() => setShowProfileMenu(false), 300);
+                        const timeout = setTimeout(() => setShowProfileMenu(false), MENU_CLOSE_DELAY);
                         setProfileMenuTimeout(timeout);
                       }} className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
-                        <button onClick={() => router.push('/profile')} className="block w-full text-left px-4 py-3 hover:bg-gray-100">My Profile</button>
-                        <button onClick={() => router.push('/transactions')} className="block w-full text-left px-4 py-3 hover:bg-gray-100">Transaction Logs</button>
-                        {user?.is_admin && <button onClick={() => router.push('/logs')} className="block w-full text-left px-4 py-3 hover:bg-gray-100">Activity Logs</button>}
-                        <button onClick={() => router.push('/profile')} className="block w-full text-left px-4 py-3 hover:bg-gray-100">Settings</button>
-                        <button onClick={handleLogout} className="block w-full text-left px-4 py-3 hover:bg-gray-100 text-red-600">Logout</button>
+                        <button onClick={() => router.push('/profile')} className="block w-full text-left px-4 py-3 hover:bg-gray-100 font-semibold">My Profile</button>
+                        <button onClick={() => router.push('/transactions')} className="block w-full text-left px-4 py-3 hover:bg-gray-100 font-semibold">Transaction History</button>
+                        <button onClick={() => router.push('/logs')} className="block w-full text-left px-4 py-3 hover:bg-gray-100 font-semibold">Activity Logs</button>
+                        <button onClick={handleLogout} className="block w-full text-left px-4 py-3 hover:bg-gray-100 text-red-600 font-semibold">Logout</button>
                       </div>
                     )}
                   </div>
                 </>
               ) : (
                 <>
-                  {/* Guest user menu */}
-                  <button onClick={() => router.push('/')} className="text-gray-700 hover:text-primary px-3 py-2">Home</button>
-                  <button onClick={() => router.push('/products')} className="text-gray-700 hover:text-primary px-3 py-2">Products</button>
-                  <button onClick={() => router.push('/how-it-works')} className="text-gray-700 hover:text-primary px-3 py-2">How It Works</button>
-                  <button onClick={() => router.push('/about')} className="text-gray-700 hover:text-primary px-3 py-2">About</button>
+                  {/* Guest menu */}
+                  <button onClick={() => router.push('/')} className="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 font-semibold">Home</button>
+                  <button onClick={() => router.push('/products')} className="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 font-semibold">Products</button>
+                  <button onClick={() => router.push('/how-it-works')} className="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 font-semibold">How It Works</button>
+                  <button onClick={() => router.push('/about')} className="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 font-semibold">About</button>
                   <button onClick={() => router.push('/login')} className="text-blue-600 hover:text-blue-800 font-bold border border-blue-600 hover:border-blue-800 px-3 py-2 rounded transition">Login</button>
                   <button onClick={() => router.push('/signup')} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Sign Up</button>
                 </>
               )}
             </div>
 
+            {/* Dark Mode Toggle - Rightmost */}
+            <div className="flex items-center">
+              <button onClick={toggleDarkMode} className="relative w-14 h-7 bg-gray-300 dark:bg-gray-600 rounded-full transition-colors">
+                <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transform transition-transform flex items-center justify-center ${darkMode ? 'translate-x-7' : ''}`}>
+                  <span className="text-sm">{darkMode ? '🌙' : '☀️'}</span>
+                </div>
+              </button>
+            </div>
+
             {/* Mobile menu button */}
             <div className="md:hidden flex items-center">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-gray-700 hover:text-primary"
+                className="text-gray-700 hover:text-primary dark:text-gray-300"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -266,12 +267,12 @@ export default function Layout({ children }) {
       </nav>
 
       {/* Main content area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 dark:text-gray-100">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-50 border-t mt-12">
+      <footer className="bg-gray-50 dark:bg-gray-800 border-t dark:border-gray-700 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-xs text-gray-600 space-y-3">
             <p>

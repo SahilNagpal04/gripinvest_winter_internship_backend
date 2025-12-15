@@ -6,18 +6,16 @@ if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-console.log('[JWT_UTILS] JWT utilities initialized successfully');
-
 /**
  * Generate JWT token
  * @param {Object} payload - Token payload
  * @returns {string} JWT token
  */
 const generateToken = (payload) => {
-  console.log('[JWT_UTILS] Generating JWT token...');
+  console.log('[JWT] Generating token for user:', payload.id);
   
   if (!payload || typeof payload !== 'object') {
-    console.error('[JWT_UTILS] Invalid payload provided');
+    console.error('[JWT] Token generation failed: Invalid payload');
     throw new Error('Payload must be a valid object');
   }
   
@@ -27,7 +25,7 @@ const generateToken = (payload) => {
     { expiresIn: process.env.JWT_EXPIRE || '7d' }
   );
   
-  console.log('[JWT_UTILS] JWT token generated successfully');
+  console.log('[JWT] Token generated successfully for user:', payload.id);
   return token;
 };
 
@@ -37,25 +35,25 @@ const generateToken = (payload) => {
  * @returns {Object} Decoded token payload
  */
 const verifyToken = (token) => {
-  console.log('[JWT_UTILS] Verifying JWT token...');
+  console.log('[JWT] Verifying token');
   
   if (!token || typeof token !== 'string') {
-    console.error('[JWT_UTILS] Invalid token format');
+    console.error('[JWT] Verification failed: Invalid token format');
     throw new Error('Token must be a non-empty string');
   }
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('[JWT_UTILS] Token verified successfully');
+    console.log('[JWT] Token verified successfully for user:', decoded.id);
     return decoded;
   } catch (error) {
-    console.error('[JWT_UTILS] Token verification failed:', error.name);
+    console.error('[JWT] Verification failed:', error.name);
     if (error.name === 'TokenExpiredError') {
       throw new Error('Token has expired');
     } else if (error.name === 'JsonWebTokenError') {
       throw new Error('Invalid token');
     }
-    throw new Error('Token verification failed');
+    throw new Error(`Token verification failed: ${error.message}`);
   }
 };
 
@@ -65,15 +63,11 @@ const verifyToken = (token) => {
  * @returns {Object|null} Decoded token payload
  */
 const decodeToken = (token) => {
-  console.log('[JWT_UTILS] Decoding JWT token...');
-  
   if (!token || typeof token !== 'string') {
-    console.error('[JWT_UTILS] Invalid token format for decoding');
     return null;
   }
   
   const decoded = jwt.decode(token);
-  console.log('[JWT_UTILS] Token decoded successfully');
   return decoded;
 };
 

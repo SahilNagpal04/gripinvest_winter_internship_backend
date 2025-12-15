@@ -63,8 +63,8 @@ export default function History() {
     <Layout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Investment History</h1>
-          <p className="text-gray-600 mt-1">View all your past and current investments</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Investment History</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">View all your past and current investments</p>
         </div>
 
         {/* Filter */}
@@ -72,25 +72,25 @@ export default function History() {
           <div className="flex gap-4">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded ${filter === 'all' ? 'bg-primary text-white' : 'bg-gray-200'}`}
+              className={`px-4 py-2 rounded ${filter === 'all' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-100'}`}
             >
               All ({investments.length})
             </button>
             <button
               onClick={() => setFilter('active')}
-              className={`px-4 py-2 rounded ${filter === 'active' ? 'bg-primary text-white' : 'bg-gray-200'}`}
+              className={`px-4 py-2 rounded ${filter === 'active' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-100'}`}
             >
               Active ({investments.filter(i => i.status === 'active').length})
             </button>
             <button
               onClick={() => setFilter('matured')}
-              className={`px-4 py-2 rounded ${filter === 'matured' ? 'bg-primary text-white' : 'bg-gray-200'}`}
+              className={`px-4 py-2 rounded ${filter === 'matured' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-100'}`}
             >
               Matured ({investments.filter(i => i.status === 'matured').length})
             </button>
             <button
               onClick={() => setFilter('cancelled')}
-              className={`px-4 py-2 rounded ${filter === 'cancelled' ? 'bg-primary text-white' : 'bg-gray-200'}`}
+              className={`px-4 py-2 rounded ${filter === 'cancelled' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-100'}`}
             >
               Cancelled ({investments.filter(i => i.status === 'cancelled').length})
             </button>
@@ -100,7 +100,7 @@ export default function History() {
         {/* Investments List */}
         {filteredInvestments.length === 0 ? (
           <div className="card text-center py-12">
-            <p className="text-gray-600">No investments found</p>
+            <p className="text-gray-600 dark:text-gray-400">No investments found</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -109,7 +109,7 @@ export default function History() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-bold text-lg">{inv.product_name}</h3>
+                      <h3 className="font-bold text-lg dark:text-gray-100">{inv.product_name}</h3>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(inv.status)}`}>
                         {inv.status}
                       </span>
@@ -119,20 +119,20 @@ export default function History() {
                     </div>
                     <div className="grid md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-600">Invested</p>
-                        <p className="font-bold">{formatCurrency(inv.amount)}</p>
+                        <p className="text-gray-600 dark:text-gray-400">Invested</p>
+                        <p className="font-bold dark:text-gray-100">{formatCurrency(inv.amount)}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600">Expected Return</p>
-                        <p className="font-bold text-green-600">{formatCurrency(inv.expected_return)}</p>
+                        <p className="text-gray-600 dark:text-gray-400">Expected Return</p>
+                        <p className="font-bold text-green-600 dark:text-green-400">{formatCurrency(inv.expected_return)}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600">Invested On</p>
-                        <p className="font-medium">{new Date(inv.invested_at).toLocaleDateString()}</p>
+                        <p className="text-gray-600 dark:text-gray-400">Invested On</p>
+                        <p className="font-medium dark:text-gray-100">{new Date(inv.invested_at).toLocaleDateString()}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600">Maturity Date</p>
-                        <p className="font-medium">{new Date(inv.maturity_date).toLocaleDateString()}</p>
+                        <p className="text-gray-600 dark:text-gray-400">Maturity Date</p>
+                        <p className="font-medium dark:text-gray-100">{new Date(inv.maturity_date).toLocaleDateString()}</p>
                       </div>
                     </div>
                   </div>

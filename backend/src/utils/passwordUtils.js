@@ -1,24 +1,22 @@
 const bcrypt = require('bcryptjs');
 
-console.log('[PASSWORD_UTILS] Password utilities initialized');
-
 /**
  * Hash a plain text password
  * @param {string} password - Plain text password
  * @returns {Promise<string>} Hashed password
  */
 const hashPassword = async (password) => {
-  console.log('[PASSWORD_UTILS] Hashing password...');
+  console.log('[PASSWORD] Hashing password');
   
   if (!password || typeof password !== 'string') {
-    console.error('[PASSWORD_UTILS] Invalid password provided');
+    console.error('[PASSWORD] Hashing failed: Invalid password');
     throw new Error('Password must be a non-empty string');
   }
   
   const salt = await bcrypt.genSalt(12);
   const hash = await bcrypt.hash(password, salt);
   
-  console.log('[PASSWORD_UTILS] Password hashed successfully');
+  console.log('[PASSWORD] Password hashed successfully');
   return hash;
 };
 
@@ -29,20 +27,19 @@ const hashPassword = async (password) => {
  * @returns {Promise<boolean>} Match result
  */
 const comparePassword = async (plainPassword, hashedPassword) => {
-  console.log('[PASSWORD_UTILS] Comparing password...');
+  console.log('[PASSWORD] Comparing password');
   
   if (!plainPassword || typeof plainPassword !== 'string') {
-    console.error('[PASSWORD_UTILS] Invalid plain password');
+    console.error('[PASSWORD] Comparison failed: Invalid plain password');
     throw new Error('Plain password must be a non-empty string');
   }
   if (!hashedPassword || typeof hashedPassword !== 'string') {
-    console.error('[PASSWORD_UTILS] Invalid hashed password');
+    console.error('[PASSWORD] Comparison failed: Invalid hashed password');
     throw new Error('Hashed password must be a non-empty string');
   }
   
   const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
-  
-  console.log('[PASSWORD_UTILS] Password comparison completed');
+  console.log('[PASSWORD] Password comparison completed:', isMatch ? 'Match' : 'No match');
   return isMatch;
 };
 
@@ -52,10 +49,10 @@ const comparePassword = async (plainPassword, hashedPassword) => {
  * @returns {Object} Password strength analysis
  */
 const checkPasswordStrength = (password) => {
-  console.log('[PASSWORD_UTILS] Checking password strength...');
+  console.log('[PASSWORD] Checking password strength');
   
   if (!password || typeof password !== 'string') {
-    console.log('[PASSWORD_UTILS] Invalid password for strength check');
+    console.log('[PASSWORD] Strength check: weak (no password)');
     return {
       score: 0,
       level: 'weak',
@@ -116,7 +113,7 @@ const checkPasswordStrength = (password) => {
     strength.level = 'weak';
   }
 
-  console.log('[PASSWORD_UTILS] Password strength check completed:', strength.level);
+  console.log('[PASSWORD] Strength check completed:', strength.level, `(${strength.score}/100)`);
   return strength;
 };
 

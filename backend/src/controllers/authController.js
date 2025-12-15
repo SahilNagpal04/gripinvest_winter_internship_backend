@@ -25,6 +25,10 @@ const signup = async (req, res, next) => {
     const existingUser = await userModel.findUserByEmail(email);
     if (existingUser) {
       if (!existingUser.email_verified) {
+        const lastDeleted = await userModel.getLastDeletionTime(email);
+        if (lastDeleted && (Date.now() - lastDeleted) < 3600000) {
+          return next(new AppError('Please wait before trying again', 429));
+        }
         await userModel.deleteUser(existingUser.id);
         console.log(`[SIGNUP] Deleted unverified account for: ${email}`);
       } else {
@@ -44,7 +48,12 @@ const signup = async (req, res, next) => {
     const otp = generateOTP();
     const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
     await userModel.store2FAOTP(userId, otp, expiryTime);
-    await sendOTP(email, otp, 'Email Verification for Signup');
+    try {
+      await sendOTP(email, otp, 'Email Verification for Signup');
+    } catch (emailError) {
+      await userModel.clear2FAOTP(userId);
+      throw new AppError('Failed to send verification email. Please try again.', 500);
+    }
 
     console.log(`[SIGNUP] User created successfully. UserId: ${userId}, Email: ${email}`);
 
@@ -139,7 +148,12 @@ const login = async (req, res, next) => {
       const otp = generateOTP();
       const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
       await userModel.store2FAOTP(user.id, otp, expiryTime);
-      await sendOTP(email, otp, 'Login Verification');
+      try {
+        await sendOTP(email, otp, 'Login Verification');
+      } catch (emailError) {
+        await userModel.clear2FAOTP(user.id);
+        throw new AppError('Failed to send verification code. Please try again.', 500);
+      }
 
       console.log(`[LOGIN] 2FA OTP sent for: ${email}`);
 
@@ -268,7 +282,11 @@ const requestPasswordReset = async (req, res, next) => {
     const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
 
     await userModel.storePasswordResetOTP(email, otp, expiryTime);
-    await sendOTP(email, otp, 'Password Reset');
+    try {
+      await sendOTP(email, otp, 'Password Reset');
+    } catch (emailError) {
+      throw new AppError('Failed to send reset code. Please try again.', 500);
+    }
 
     console.log(`[PASSWORD_RESET] OTP sent successfully to: ${email}`);
 
@@ -324,6 +342,10 @@ const resetPassword = async (req, res, next) => {
 const getProfile = async (req, res, next) => {
   try {
     const user = await userModel.findUserById(req.user.id);
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
 
     res.status(200).json({
       status: 'success',
@@ -431,7 +453,12 @@ const resendOTP = async (req, res, next) => {
     const otp = generateOTP();
     const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
     await userModel.store2FAOTP(userId, otp, expiryTime);
-    await sendOTP(user.email, otp, 'OTP Resend');
+    try {
+      await sendOTP(user.email, otp, 'OTP Resend');
+    } catch (emailError) {
+      await userModel.clear2FAOTP(userId);
+      throw new AppError('Failed to send OTP. Please try again.', 500);
+    }
 
     console.log(`[RESEND_OTP] OTP resent successfully to: ${user.email}`);
 

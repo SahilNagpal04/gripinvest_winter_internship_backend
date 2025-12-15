@@ -1,7 +1,5 @@
 const { body, param, query, validationResult } = require('express-validator');
 
-console.log('[VALIDATORS] Validation utilities initialized');
-
 /**
  * Validate request and return errors if any
  * @param {Object} req - Express request object
@@ -9,10 +7,11 @@ console.log('[VALIDATORS] Validation utilities initialized');
  * @param {Function} next - Express next middleware
  */
 const validate = (req, res, next) => {
-  console.log('[VALIDATORS] Validating request...');
+  console.log('[VALIDATION] Validating request:', req.method, req.path);
+  
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log('[VALIDATORS] Validation failed:', errors.array().length, 'errors');
+    console.log('[VALIDATION] Validation failed:', errors.array().length, 'error(s)');
     return res.status(400).json({
       status: 'error',
       message: 'Validation failed',
@@ -23,9 +22,22 @@ const validate = (req, res, next) => {
     });
   }
   
-  console.log('[VALIDATORS] Validation passed');
+  console.log('[VALIDATION] Validation passed');
   next();
 };
+
+/**
+ * Reusable password validation rules
+ */
+const passwordValidationRules = [
+  body('password')
+    .notEmpty().withMessage('Password is required')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
+    .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
+    .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
+    .matches(/[0-9]/).withMessage('Password must contain at least one number')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/).withMessage('Password must contain at least one special character')
+];
 
 /**
  * Validation rules for user signup
@@ -47,13 +59,7 @@ const signupValidation = [
     .isEmail().withMessage('Invalid email format')
     .normalizeEmail(),
   
-  body('password')
-    .notEmpty().withMessage('Password is required')
-    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
-    .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
-    .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
-    .matches(/[0-9]/).withMessage('Password must contain at least one number')
-    .matches(/[!@#$%^&*(),.?":{}|<>]/).withMessage('Password must contain at least one special character'),
+  ...passwordValidationRules,
   
   body('risk_appetite')
     .optional()
@@ -140,6 +146,12 @@ const createProductValidation = [
   body('max_investment')
     .optional()
     .isFloat({ min: 0 }).withMessage('Maximum investment must be positive')
+    .custom((value, { req }) => {
+      if (value && req.body.min_investment && parseFloat(value) <= parseFloat(req.body.min_investment)) {
+        throw new Error('Maximum investment must be greater than minimum investment');
+      }
+      return true;
+    })
 ];
 
 /**
@@ -157,6 +169,7 @@ const createInvestmentValidation = [
 
 module.exports = {
   validate,
+  passwordValidationRules,
   signupValidation,
   loginValidation,
   resetPasswordRequestValidation,

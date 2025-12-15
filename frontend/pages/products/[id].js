@@ -134,8 +134,8 @@ export default function ProductDetail() {
         <div className="card">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <p className="text-gray-600">{getInvestmentTypeLabel(product.investment_type)}</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{product.name}</h1>
+              <p className="text-gray-600 dark:text-gray-400">{getInvestmentTypeLabel(product.investment_type)}</p>
             </div>
             <span className={`px-3 py-1 rounded font-medium ${getRiskColor(product.risk_level)}`}>
               {product.risk_level} risk
@@ -143,26 +143,26 @@ export default function ProductDetail() {
           </div>
 
           {/* Product description */}
-          <p className="text-gray-700 mb-6">{product.description}</p>
+          <p className="text-gray-700 dark:text-gray-300 mb-6">{product.description}</p>
 
           {/* Product stats grid */}
           <div className="grid md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-green-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Annual Yield</p>
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Annual Yield</p>
               <p className="text-2xl font-bold text-green-600">{product.annual_yield}%</p>
             </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Tenure</p>
-              <p className="text-2xl font-bold text-gray-900">{product.tenure_months}m</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Tenure</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{product.tenure_months}m</p>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Min Investment</p>
-              <p className="text-lg font-bold text-gray-900">{formatCurrency(product.min_investment)}</p>
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Min Investment</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(product.min_investment)}</p>
             </div>
             {product.max_investment && (
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Max Investment</p>
-                <p className="text-lg font-bold text-gray-900">{formatCurrency(product.max_investment)}</p>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Max Investment</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(product.max_investment)}</p>
               </div>
             )}
           </div>
@@ -171,7 +171,7 @@ export default function ProductDetail() {
         {/* Investment form */}
         {isAuthenticated() && (
           <div className="card">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Invest Now</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Invest Now</h2>
 
             {/* Success message */}
             {success && (
@@ -190,7 +190,7 @@ export default function ProductDetail() {
             <form onSubmit={handleInvest} className="space-y-4">
               {/* Amount input */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Investment Amount
                 </label>
                 <input
@@ -207,20 +207,20 @@ export default function ProductDetail() {
 
               {/* Expected returns */}
               {amount && (
-                <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                   <div className="flex justify-between mb-2">
-                    <span className="text-gray-700">Investment Amount:</span>
-                    <span className="font-bold">{formatCurrency(parseFloat(amount) || 0)}</span>
+                    <span className="text-gray-700 dark:text-gray-300">Investment Amount:</span>
+                    <span className="font-bold dark:text-gray-100">{formatCurrency(parseFloat(amount) || 0)}</span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span className="text-gray-700">Expected Returns:</span>
+                    <span className="text-gray-700 dark:text-gray-300">Expected Returns:</span>
                     <span className="font-bold text-green-600">
                       +{formatCurrency(calculateReturns())}
                     </span>
                   </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="text-gray-900 font-medium">Maturity Value:</span>
-                    <span className="font-bold text-lg">
+                  <div className="flex justify-between border-t dark:border-gray-600 pt-2">
+                    <span className="text-gray-900 dark:text-gray-100 font-medium">Maturity Value:</span>
+                    <span className="font-bold text-lg dark:text-gray-100">
                       {formatCurrency((parseFloat(amount) || 0) + calculateReturns())}
                     </span>
                   </div>
@@ -241,8 +241,8 @@ export default function ProductDetail() {
 
         {/* Login prompt for guests */}
         {!isAuthenticated() && (
-          <div className="card text-center bg-blue-50">
-            <p className="text-gray-700 mb-4">Please login to invest in this product</p>
+          <div className="card text-center bg-blue-50 dark:bg-blue-900/20">
+            <p className="text-gray-700 dark:text-gray-300 mb-4">Please login to invest in this product</p>
             <button
               onClick={() => router.push('/login')}
               className="btn btn-primary"

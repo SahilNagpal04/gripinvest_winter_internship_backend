@@ -129,14 +129,14 @@ export default function Profile() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Page header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-          <p className="text-gray-600 mt-1">Manage your account settings</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Profile</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your account settings</p>
         </div>
 
         {/* Profile card */}
         <div className="card">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Personal Information</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Personal Information</h2>
             {!editing && (
               <button
                 onClick={() => setEditing(true)}
@@ -166,7 +166,7 @@ export default function Profile() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     First Name
                   </label>
                   <input
@@ -179,7 +179,7 @@ export default function Profile() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Last Name
                   </label>
                   <input
@@ -193,7 +193,7 @@ export default function Profile() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Risk Appetite
                 </label>
                 <select
@@ -207,7 +207,7 @@ export default function Profile() {
                   <option value="moderate">Moderate - Balanced approach</option>
                   <option value="high">High - Aggressive investor</option>
                 </select>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Changing your risk appetite will update your product recommendations
                 </p>
               </div>
@@ -234,29 +234,29 @@ export default function Profile() {
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">First Name</p>
-                  <p className="font-medium text-gray-900">{user.first_name}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">First Name</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">{user.first_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Last Name</p>
-                  <p className="font-medium text-gray-900">{user.last_name || 'Not set'}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Last Name</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">{user.last_name || 'Not set'}</p>
                 </div>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium text-gray-900">{user.email}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Email</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{user.email}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Risk Appetite</p>
-                <p className="font-medium text-gray-900 capitalize">{user.risk_appetite}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Risk Appetite</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100 capitalize">{user.risk_appetite}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Account Balance</p>
-                <p className="font-medium text-gray-900">{formatCurrency(user.balance)}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Account Balance</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(user.balance)}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Member Since</p>
-                <p className="font-medium text-gray-900">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Member Since</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">
                   {new Date(user.created_at).toLocaleDateString('en-IN', {
                     year: 'numeric',
                     month: 'long',

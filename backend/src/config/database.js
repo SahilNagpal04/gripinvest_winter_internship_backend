@@ -39,7 +39,7 @@ const testConnection = async () => {
     console.log('[DB_TEST] Connection released back to pool');
     return true;
   } catch (error) {
-    console.error('[DB_TEST] Database connection failed');
+    console.error('[DB_TEST] Database connection failed:', error.message);
     return false;
   }
 };
@@ -57,7 +57,23 @@ const query = async (sql, params) => {
     console.log('[DB_QUERY] Query executed successfully');
     return results;
   } catch (error) {
-    console.error('[DB_QUERY] Query execution failed');
+    console.error('[DB_QUERY] Query execution failed:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Get database connection from pool
+ * @returns {Promise<Connection>} Database connection
+ */
+const getConnection = async () => {
+  console.log('[DB_CONNECTION] Getting connection from pool...');
+  try {
+    const connection = await pool.getConnection();
+    console.log('[DB_CONNECTION] Connection acquired successfully');
+    return connection;
+  } catch (error) {
+    console.error('[DB_CONNECTION] Failed to get connection:', error.message);
     throw error;
   }
 };
@@ -65,5 +81,6 @@ const query = async (sql, params) => {
 module.exports = {
   pool,
   query,
-  testConnection
+  testConnection,
+  getConnection
 };

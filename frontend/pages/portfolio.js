@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
+import PortfolioHealthScore from '../components/PortfolioHealthScore';
 import { investmentsAPI } from '../utils/api';
 import { isAuthenticated, formatCurrency, formatDate, getRiskColor } from '../utils/auth';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -62,11 +63,9 @@ export default function Portfolio() {
 
     try {
       await investmentsAPI.cancel(id);
-      setError('');
-      loadPortfolio();
-      loadSummary();
+      window.location.reload();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to cancel investment');
+      alert(err.response?.data?.message || 'Failed to cancel investment');
     }
   };
 
@@ -182,64 +181,69 @@ export default function Portfolio() {
         {/* Overview Cards - 6 cards */}
         {summary && (
           <div className="grid md:grid-cols-3 gap-4">
-            <div className="card bg-gradient-to-br from-blue-50 to-blue-100">
-              <p className="text-sm text-gray-600 mb-1">Current Value</p>
-              <p className="text-3xl font-bold text-gray-900">
+            <div className="card bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Current Value</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {formatCurrency(currentValue)}
               </p>
             </div>
             <div 
-              className="card bg-gradient-to-br from-green-50 to-green-100 cursor-pointer hover:shadow-lg transition-shadow"
+              className="card bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => {
                 setStatusFilter('matured');
                 setTimeout(() => document.getElementById('investments-table')?.scrollIntoView({ behavior: 'smooth' }), 100);
               }}
             >
-              <p className="text-sm text-gray-600 mb-1">Total Returns</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Total Returns</p>
               <p className="text-3xl font-bold text-green-600">
                 +{formatCurrency(totalReturns)}
               </p>
               <p className="text-sm text-green-600 font-medium">(+{returnPercentage}%)</p>
             </div>
             <div 
-              className="card bg-gradient-to-br from-purple-50 to-purple-100 cursor-pointer hover:shadow-lg transition-shadow"
+              className="card bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => {
                 setStatusFilter('active');
                 setTimeout(() => document.getElementById('investments-table')?.scrollIntoView({ behavior: 'smooth' }), 100);
               }}
             >
-              <p className="text-sm text-gray-600 mb-1">Active Investments</p>
-              <p className="text-3xl font-bold text-gray-900">{activeCount}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Active Investments</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{activeCount}</p>
             </div>
-            <div className="card bg-gradient-to-br from-indigo-50 to-indigo-100">
-              <p className="text-sm text-gray-600 mb-1">Invested</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="card bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900 dark:to-indigo-800">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Invested</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {formatCurrency(totalInvested)}
               </p>
             </div>
-            <div className="card bg-gradient-to-br from-yellow-50 to-yellow-100">
-              <p className="text-sm text-gray-600 mb-1">Interest Earned</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="card bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Interest Earned</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {formatCurrency(totalReturns)}
               </p>
             </div>
             <div 
-              className="card bg-gradient-to-br from-teal-50 to-teal-100 cursor-pointer hover:shadow-lg transition-shadow"
+              className="card bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900 dark:to-teal-800 cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => {
                 setStatusFilter('matured');
                 setTimeout(() => document.getElementById('investments-table')?.scrollIntoView({ behavior: 'smooth' }), 100);
               }}
             >
-              <p className="text-sm text-gray-600 mb-1">Matured Investments</p>
-              <p className="text-3xl font-bold text-gray-900">{maturedCount}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Matured Investments</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{maturedCount}</p>
             </div>
           </div>
+        )}
+
+        {/* Portfolio Health Score */}
+        {summary?.healthScore && (
+          <PortfolioHealthScore healthScore={summary.healthScore} />
         )}
 
         {/* Asset Allocation */}
         {chartData.length > 0 && (
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Asset Allocation</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Asset Allocation</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
@@ -268,11 +272,11 @@ export default function Portfolio() {
                     <div key={risk.risk_level} className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <div className={`w-4 h-4 rounded`} style={{ backgroundColor: COLORS[risk.risk_level] }}></div>
-                        <span className="font-medium capitalize">{risk.risk_level} Risk</span>
+                        <span className="font-medium capitalize dark:text-gray-100">{risk.risk_level} Risk</span>
                       </div>
                       <div className="text-right">
-                        <span className="font-bold">{percentage}%</span>
-                        <span className="text-gray-600 text-sm ml-2">{formatCurrency(risk.total_amount)}</span>
+                        <span className="font-bold dark:text-gray-100">{percentage}%</span>
+                        <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">{formatCurrency(risk.total_amount)}</span>
                       </div>
                     </div>
                   );
@@ -284,23 +288,20 @@ export default function Portfolio() {
 
         {/* AI Portfolio Insights */}
         {summary?.insights && summary.insights.length > 0 && (
-          <div className="card bg-gradient-to-r from-purple-50 to-blue-50">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">🤖</span>
-                <h2 className="text-xl font-bold text-gray-900">AI Portfolio Insights</h2>
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900 dark:to-purple-900 border-2 border-blue-200 dark:border-blue-700 rounded-xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="bg-yellow-400 p-3 rounded-lg text-2xl">🤖</div>
+              <div className="flex-1">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-xl font-bold">AI Portfolio Insights</h3>
+                  <button onClick={loadSummary} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Refresh</button>
+                </div>
+                <div className="space-y-2">
+                  {summary.insights.map((insight, index) => (
+                    <p key={index} className="text-gray-700 dark:text-gray-300">{insight}</p>
+                  ))}
+                </div>
               </div>
-              <button onClick={loadSummary} className="text-sm text-primary hover:underline">Refresh</button>
-            </div>
-            <div className="bg-white p-4 rounded-lg">
-              <ul className="space-y-2">
-                {summary.insights.map((insight, index) => (
-                  <li key={index} className="text-gray-700 flex items-start gap-2">
-                    <span className="text-primary mt-1">•</span>
-                    <span>{insight}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
         )}
@@ -309,7 +310,7 @@ export default function Portfolio() {
         {upcomingMaturities.length > 0 && (
           <div className="card">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Upcoming Maturities</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Upcoming Maturities</h2>
             </div>
             <div className="space-y-3">
               {upcomingMaturities.map((inv) => {
@@ -317,14 +318,14 @@ export default function Portfolio() {
                 const returns = inv.expected_return - inv.amount;
                 const returnPct = ((returns / inv.amount) * 100).toFixed(1);
                 return (
-                  <div key={inv.id} className="bg-gray-50 p-4 rounded-lg">
+                  <div key={inv.id} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-bold text-gray-900">{inv.product_name}</p>
-                        <p className="text-sm text-gray-600">Matures in {days} days</p>
+                        <p className="font-bold text-gray-900 dark:text-gray-100">{inv.product_name}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Matures in {days} days</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-gray-900">{formatCurrency(inv.amount)} + {formatCurrency(returns)}</p>
+                        <p className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(inv.amount)} + {formatCurrency(returns)}</p>
                         <p className="text-sm text-green-600">Return: {returnPct}%</p>
                       </div>
                     </div>
@@ -338,7 +339,7 @@ export default function Portfolio() {
         {/* Risk Distribution Bars */}
         {summary?.riskDistribution && summary.riskDistribution.length > 0 && (
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Portfolio Risk Analysis</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Portfolio Risk Analysis</h2>
             <div className="space-y-4">
               {(() => {
                 const totalAmount = summary.riskDistribution.reduce((sum, r) => sum + parseFloat(r.total_amount || 0), 0);
@@ -348,8 +349,8 @@ export default function Portfolio() {
                   return (
                     <div key={risk.risk_level}>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="font-medium capitalize">{risk.risk_level} Risk ({percentage.toFixed(0)}%)</span>
-                        <span className="font-bold">{formatCurrency(risk.total_amount)}</span>
+                        <span className="font-medium capitalize dark:text-gray-100">{risk.risk_level} Risk ({percentage.toFixed(0)}%)</span>
+                        <span className="font-bold dark:text-gray-100">{formatCurrency(risk.total_amount)}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3">
                         <div
@@ -365,8 +366,8 @@ export default function Portfolio() {
                 });
               })()}
               {riskScore.label !== 'N/A' && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-800">
+                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
                     Risk Score: {riskScore.score}/10 - {riskScore.label} {riskScore.emoji}
                   </p>
                 </div>
@@ -378,7 +379,7 @@ export default function Portfolio() {
         {/* Investments list */}
         <div id="investments-table" className="card">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">My Investments ({portfolio.length})</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">My Investments ({portfolio.length})</h2>
           </div>
 
           {/* Status Filter Tabs */}
@@ -405,7 +406,7 @@ export default function Portfolio() {
 
           {filteredPortfolio.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600 mb-4">You haven't made any investments yet</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">You haven't made any investments yet</p>
               <button
                 onClick={() => router.push('/products')}
                 className="btn btn-primary"
@@ -416,31 +417,31 @@ export default function Portfolio() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Product</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Amount</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Returns</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Maturity</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-100">Product</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-100">Amount</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-100">Returns</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-100">Status</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-100">Maturity</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-100">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredPortfolio.map((investment) => (
-                    <tr key={investment.id} className="hover:bg-gray-50">
+                    <tr key={investment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-4 py-3">
                         <div>
-                          <p className="font-medium text-gray-900">{investment.product_name}</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{investment.product_name}</p>
                           <span className={`text-xs px-2 py-1 rounded ${getRiskColor(investment.risk_level)}`}>
                             {investment.risk_level}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-4 py-3 font-medium dark:text-gray-100">
                         {formatCurrency(investment.amount)}
                       </td>
-                      <td className="px-4 py-3 text-green-600 font-medium">
+                      <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium">
                         +{formatCurrency(investment.expected_return - investment.amount)}
                       </td>
                       <td className="px-4 py-3">
@@ -454,7 +455,7 @@ export default function Portfolio() {
                           {investment.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                         {formatDate(investment.maturity_date)}
                       </td>
                       <td className="px-4 py-3">
