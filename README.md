@@ -11,7 +11,7 @@ Full-stack investment platform built for Grip Invest Winter Internship 2025. Fea
 - ✅ Transaction logging for all API calls
 - ✅ AI-powered recommendations based on risk appetite
 - ✅ Admin and user role-based access control
-- ✅ 87% test coverage with Jest
+- ✅ 80%+ test coverage with Jest
 
 ### Frontend
 - ✅ Responsive UI with Next.js and Tailwind CSS
@@ -193,8 +193,8 @@ cd backend
 npm test
 ```
 
-Test coverage: 87% (exceeds 75% requirement)
-- 181 tests passing
+Test coverage: 80.56% (exceeds 75% requirement)
+- 257 tests passing
 - All modules covered
 
 ### Frontend Tests
@@ -405,11 +405,11 @@ docker-compose up -d --scale backend=2
 
 ## 🧪 Test Coverage
 
-### Backend: 87%
-- Statements: 87.78%
-- Branches: 74.02%
-- Functions: 87.35%
-- Lines: 87.78%
+### Backend: 80.56%
+- Statements: 80.56%
+- Branches: 66.15%
+- Functions: 82%
+- Lines: 81.73%
 
 ### Frontend: 75%+
 - Component tests
