@@ -193,7 +193,7 @@ cd backend
 npm test
 ```
 
-Test coverage: 80.56% (exceeds 75% requirement)
+Test coverage: 80.56%
 - 257 tests passing
 - All modules covered
 
