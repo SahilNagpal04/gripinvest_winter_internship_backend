@@ -559,39 +559,15 @@ npm run dev  # Restart server
 
 ## ✨ Extra Features Beyond Requirements
 
-### Enhanced Authentication
-- **Advanced Password Validation** - Real-time strength checking with AI suggestions
-- **Profile Management** - Update user details and risk appetite
-
-### Advanced AI Features
-- **Portfolio Insights with AI** - Comprehensive investment advice and risk analysis
-- **Smart Product Recommendations** - Personalized suggestions throughout the app
-- **Error Summarization** - AI-powered analysis of error logs and patterns
-- **Investment Calculator** - Real-time returns calculation
-
 ### Enhanced User Experience
 - **Dark Mode** - Toggle between light and dark themes
 - **Smart Alerts** - Real-time notifications for investments and portfolio changes
-- **Interactive Charts** - Advanced portfolio visualization with Recharts
-- **Search & Filters** - Advanced product filtering and search capabilities
-
-### DevOps & Performance
-- **Health Check Endpoints** - Comprehensive service and database monitoring
-- **Advanced Logging** - Detailed transaction logs with user activity tracking
-- **Database Seeding** - Automated sample data initialization
 
 ### Security Enhancements
-- **Role-based Access Control** - Admin and user permissions
 - **SQL Injection Prevention** - Parameterized queries and validation
 - **XSS Protection** - Helmet.js security headers
-- **CORS Configuration** - Secure cross-origin requests
-- **Input Validation** - Comprehensive request validation
 
 
-
-## 📄 License
-
-This project is part of Grip Invest Winter Internship 2025.
 
 ## 📧 Contact
 
