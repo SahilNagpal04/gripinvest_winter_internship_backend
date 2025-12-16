@@ -203,6 +203,10 @@ cd frontend
 npm test
 ```
 
+Test coverage: 66.06% 
+- 291 tests passing
+- All modules covered
+
 ## 📁 Project Structure
 
 ```
@@ -237,16 +241,11 @@ gripinvest_winter_internship_backend/
 ## 🔌 API Endpoints
 
 ### Authentication
-- `POST /api/auth/signup` - Register new user (sends OTP)
-- `POST /api/auth/verify-signup` - Verify email with OTP
-- `POST /api/auth/login` - User login (sends OTP if 2FA enabled)
-- `POST /api/auth/verify-login` - Verify 2FA OTP
-- `POST /api/auth/resend-otp` - Resend OTP
+- `POST /api/auth/signup` - Register new user
 - `GET /api/auth/profile` - Get user profile
 - `PUT /api/auth/profile` - Update profile
 - `POST /api/auth/check-password` - Check password strength
-- `POST /api/auth/request-password-reset` - Request OTP
-- `POST /api/auth/reset-password` - Reset password with OTP
+- `POST /api/auth/reset-password` - Reset password
 
 ### Products
 - `GET /api/products` - Get all products (with filters)
@@ -393,15 +392,7 @@ docker-compose up -d --scale backend=2
 - XSS protection with Helmet
 - CORS configuration
 - Input validation
-- Role-based access control
 
-## 📈 Performance
-
-- Connection pooling for database
-- Efficient queries with indexes
-- Code splitting in frontend
-- Lazy loading of components
-- Optimized Docker images
 
 ## 🧪 Test Coverage
 
@@ -538,24 +529,6 @@ docker-compose up -d --build
 
 Import `GripInvest_API.postman_collection.json` from the backend directory to test all API endpoints.
 
-## 🔐 Email 2FA Setup
-
-For detailed 2FA setup instructions, see [QUICK-START-2FA.md](QUICK-START-2FA.md)
-
-**Quick Setup:**
-```bash
-cd backend
-setup-2fa.bat  # Run database migration
-npm install nodemailer  # Install email service
-npm run dev  # Restart server
-```
-
-**Features:**
-- ✅ Mandatory email verification on signup
-- ✅ Optional 2FA for login (user can enable/disable)
-- ✅ OTP-based password reset
-- ✅ Professional email templates
-- ✅ Console logging for development
 
 ## ✨ Extra Features Beyond Requirements
 
