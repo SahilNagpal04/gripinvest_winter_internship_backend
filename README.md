@@ -468,6 +468,72 @@ rm -rf .next
 docker-compose up -d --build frontend
 ```
 
+### Port Conflicts (First Time Setup)
+**Error**: `Port already in use` when running `docker-compose up`
+
+#### Check Port Availability
+```bash
+# Windows - Check which ports are in use
+netstat -ano | findstr :3000
+netstat -ano | findstr :5000
+netstat -ano | findstr :3306
+
+# Kill process using port (replace PID)
+taskkill /PID <PID> /F
+```
+
+#### MySQL Port 3306 Conflict
+```bash
+# Option A: Stop existing MySQL
+net stop mysql80
+
+# Option B: Change port in docker-compose.yml
+services:
+  mysql:
+    ports:
+      - "3307:3306"  # Use port 3307
+
+# Update backend/.env
+DB_PORT=3307
+```
+
+#### Backend Port 5000 Conflict
+```bash
+# Change port in docker-compose.yml
+services:
+  backend:
+    ports:
+      - "5001:5000"  # Use port 5001
+
+# Update frontend/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:5001/api
+```
+
+#### Frontend Port 3000 Conflict
+```bash
+# Change port in docker-compose.yml
+services:
+  frontend:
+    ports:
+      - "3001:3000"  # Use port 3001
+```
+
+#### Quick Fix for All Ports
+```bash
+# Stop containers and kill processes
+docker-compose down
+taskkill /IM node.exe /F
+net stop mysql80
+
+# Restart with original ports
+docker-compose up -d --build
+```
+
+#### Access URLs After Port Changes
+- **Frontend**: http://localhost:3001 (if changed)
+- **Backend**: http://localhost:5001 (if changed) 
+- **Database**: localhost:3307 (if changed)
+
 ## 📦 Postman Collection
 
 Import `GripInvest_API.postman_collection.json` from the backend directory to test all API endpoints.
