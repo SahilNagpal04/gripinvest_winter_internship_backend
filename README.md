@@ -1,6 +1,6 @@
 # Grip Invest - Mini Investment Platform
 
-Full-stack investment platform built for Grip Invest Winter Internship 2025. Features user authentication, investment products management, portfolio tracking, and AI-powered recommendations.
+Full-stack investment platform. Features user authentication, investment products management, portfolio tracking, and AI-powered recommendations.
 
 ## 🚀 Features
 
