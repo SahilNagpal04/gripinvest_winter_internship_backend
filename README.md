@@ -1,4 +1,4 @@
-# Grip Invest - Mini Investment Platform
+# Mini Investment Platform
 
 Full-stack investment platform. Features user authentication, investment products management, portfolio tracking, and AI-powered recommendations.
 
